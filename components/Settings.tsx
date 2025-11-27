@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
 
 interface SettingsProps {
@@ -16,6 +16,7 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
   const [editingHabit, setEditingHabit] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   // Edit Habit State
   const [habitCost, setHabitCost] = useState(habit?.costPerOccurrence.toString() || '');
@@ -251,9 +252,9 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                 <div className="bg-white rounded-2xl overflow-hidden shadow-sm divide-y divide-gray-100">
                     <button onClick={() => {
                         if (navigator.share) {
-                            const shareUrl = window.location.protocol.startsWith('http') ? window.location.href : 'https://dependency-wallet.app';
+                            const shareUrl = window.location.protocol.startsWith('http') ? window.location.href : 'https://habithero.app';
                             navigator.share({
-                                title: 'Dependency Wallet',
+                                title: 'HabitHero',
                                 text: 'Я коплю на мечту, отказываясь от вредных привычек! Присоединяйся!',
                                 url: shareUrl
                             }).catch(err => console.error('Share failed:', err));
@@ -273,7 +274,10 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         </div>
                         <ChevronRight size={16} className="text-gray-400"/>
                     </button>
-                    <button className="w-full p-4 flex items-center justify-between hover:bg-gray-50 text-left">
+                    <button 
+                        onClick={() => setShowAbout(true)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 text-left"
+                    >
                          <div className="flex items-center space-x-3 text-gray-700">
                             <Info size={20} />
                             <span>О приложении</span>
@@ -306,6 +310,65 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowResetConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
                             <button onClick={onReset} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Сбросить</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* About Modal */}
+            {showAbout && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200 relative max-h-[85vh] overflow-y-auto no-scrollbar">
+                        <button 
+                            onClick={() => setShowAbout(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2"
+                        >
+                            <X size={24} />
+                        </button>
+                        
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center text-primary-600 mb-3">
+                                <Info size={32} />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900">HabitHero</h3>
+                            <p className="text-sm text-gray-500">твой помощник в борьбе с вредными привычками</p>
+                        </div>
+
+                        <div className="space-y-4 text-sm text-gray-600 leading-relaxed mb-6">
+                            <p>Мы помогаем не просто отказаться от привычки, а превратить ежедневную экономию в реальные покупки.</p>
+                            
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                                <div className="flex items-start space-x-3">
+                                    <span className="text-xl">📊</span>
+                                    <div>
+                                        <p className="font-bold text-gray-800 text-xs uppercase mb-1">Визуализируй прогресс</p>
+                                        <p>Смотри не на цифры, а на конкретную цель: iPhone через 18 дней, отпуск через 2 месяца.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start space-x-3">
+                                    <span className="text-xl">🔥</span>
+                                    <div>
+                                        <p className="font-bold text-gray-800 text-xs uppercase mb-1">Без наказаний</p>
+                                        <p>Срыв не обнуляет прогресс - только отодвигает цель на короткое время.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start space-x-3">
+                                    <span className="text-xl">💰</span>
+                                    <div>
+                                        <p className="font-bold text-gray-800 text-xs uppercase mb-1">Реальная экономия</p>
+                                        <p>Каждый день без привычки приближает тебя к покупке мечты.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-center italic pt-2">Разработано с ❤️ для тех, кто стремится к лучшему</p>
+                        </div>
+
+                        <div className="text-center border-t border-gray-100 pt-4 space-y-1">
+                            <p className="text-xs text-gray-400">Связь: support@habithero.app</p>
+                            <p className="text-xs text-gray-400">Версия: 1.0.4</p>
                         </div>
                     </div>
                 </div>
