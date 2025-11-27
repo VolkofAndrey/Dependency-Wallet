@@ -1,4 +1,8 @@
+
 export const ASSETS = {
+  // Hero image for onboarding
+  HERO: '/hero.jpg',
+
   // iPhone 15 Pro Natural Titanium (closest visual match to "17 Pro" concept)
   IPHONE: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/IPhone_15_Pro_Natural_Titanium_vector.svg/640px-IPhone_15_Pro_Natural_Titanium_vector.svg.png',
   

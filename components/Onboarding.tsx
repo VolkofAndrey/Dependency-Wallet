@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HabitType, Frequency, Habit, Goal } from '../types';
 import { ArrowRight, ArrowLeft, Cigarette, Wine, Zap, Plus, Upload, Check, Sandwich } from 'lucide-react';
 import { calculateDailySavings, SUGGESTED_GOALS } from '../services/storageService';
+import { ASSETS } from '../data/assets';
 
 interface OnboardingProps {
   onComplete: (habit: Habit, goal: Goal) => void;
@@ -16,6 +17,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [cost, setCost] = useState<string>('');
   const [frequency, setFrequency] = useState<Frequency>(Frequency.DAILY);
   const [timesPerDay, setTimesPerDay] = useState<string>('');
+  const [timesPerWeek, setTimesPerWeek] = useState<string>('');
   const [customName, setCustomName] = useState('');
 
   // State for Goal
@@ -29,9 +31,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const getDailyCost = () => {
     const costNum = parseFloat(cost) || 0;
-    const timesNum = parseInt(timesPerDay) || 1;
+    const timesD = parseInt(timesPerDay) || 1;
+    const timesW = parseInt(timesPerWeek) || 1;
+    
     const h: Habit = {
-      id: 'temp', type: habitType || HabitType.OTHER, costPerOccurrence: costNum, frequency, timesPerDay: timesNum, createdAt: 0
+      id: 'temp', 
+      type: habitType || HabitType.OTHER, 
+      costPerOccurrence: costNum, 
+      frequency, 
+      timesPerDay: timesD, 
+      timesPerWeek: timesW,
+      createdAt: 0
     };
     return calculateDailySavings(h);
   };
@@ -64,6 +74,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       costPerOccurrence: parseFloat(cost),
       frequency: frequency,
       timesPerDay: frequency === Frequency.MULTIPLE_DAILY ? parseInt(timesPerDay) : undefined,
+      timesPerWeek: frequency === Frequency.MULTIPLE_WEEKLY ? parseInt(timesPerWeek) : undefined,
       createdAt: Date.now(),
     };
 
@@ -81,22 +92,35 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   // --- Step 1: Welcome ---
   if (step === 1) {
     return (
-      <div className="flex flex-col h-full p-6 justify-between bg-white text-gray-800 animate-in fade-in duration-500">
-        <div className="mt-10 flex flex-col items-center text-center">
-          <div className="w-64 h-64 bg-primary-100 rounded-full flex items-center justify-center mb-8 relative overflow-hidden">
-             <div className="absolute inset-0 bg-primary-500 opacity-10 animate-pulse"></div>
-             <img src="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80" className="object-cover w-full h-full opacity-90 mix-blend-multiply" alt="Dreams" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Привет, я <span className="text-primary-600">HabitHero</span></h1>
-          <p className="text-gray-600 text-lg">Я помогу превратить твои вредные привычки в вещи, о которых ты всегда мечтал. Визуализируй цель, а не просто цифры.<br/><br/>Бросай вредные привычки и копи на мечту!</p>
+      <div className="flex flex-col h-full bg-white animate-in fade-in duration-500">
+        <div className="pt-6 px-6 pb-2 text-center">
+             <h2 className="text-xl font-medium text-gray-500">Привет, я <span className="text-primary-600 font-bold">HabitHero</span></h2>
         </div>
-        <div className="w-full mb-5">
-            <div className="flex justify-center mb-4 space-x-2">
+
+        <div className="flex-1 relative w-full overflow-hidden">
+             <img src={ASSETS.HERO} className="absolute inset-0 w-full h-full object-cover object-center" alt="Dreams" />
+             <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white/90"></div>
+             <div className="absolute bottom-0 w-full p-6 pb-4 bg-gradient-to-t from-white via-white/80 to-transparent pt-20 text-center">
+                <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight">
+                  Не просто бросай — <br/>
+                  <span className="text-primary-600">покупай мечты</span>
+                </h1>
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  Каждый день без привычки приближает тебя к цели. 
+                  HabitHero превращает отказы в реальные покупки.
+                  <br/><br/>
+                  Визуализируй цель, а не просто цифры!
+                </p>
+             </div>
+        </div>
+        
+        <div className="w-full px-6 pb-8 pt-2">
+            <div className="flex justify-center mb-6 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-primary-500"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
             </div>
-            <button onClick={handleNext} className="w-full bg-primary-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
+            <button onClick={handleNext} className="w-full bg-primary-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform mb-5">
                 Начать
             </button>
         </div>
@@ -150,7 +174,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Стоимость за раз (₽)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Сколько вы тратите за раз (₽)</label>
                         <input 
                             type="number" 
                             value={cost}
@@ -169,7 +193,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         >
                             <option value={Frequency.DAILY}>Раз в день</option>
                             <option value={Frequency.MULTIPLE_DAILY}>Несколько раз в день</option>
-                            <option value={Frequency.EVERY_2_DAYS}>Раз в 2 дня</option>
+                            <option value={Frequency.MULTIPLE_WEEKLY}>Несколько раз в неделю</option>
                             <option value={Frequency.WEEKLY}>Раз в неделю</option>
                         </select>
                     </div>
@@ -188,6 +212,21 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         </div>
                     )}
 
+                    {frequency === Frequency.MULTIPLE_WEEKLY && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз в неделю?</label>
+                            <input 
+                                type="number" 
+                                min="1"
+                                max="7"
+                                value={timesPerWeek}
+                                onChange={(e) => setTimesPerWeek(e.target.value)}
+                                className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                placeholder="3"
+                            />
+                        </div>
+                    )}
+
                     <div className="p-4 bg-primary-600 rounded-xl mt-4 shadow-lg transition-all">
                         <p className="text-center text-white font-medium">
                             Ты тратишь примерно <span className="font-bold text-xl">{(getDailyCost() * 30).toFixed(0)}₽</span> в месяц
@@ -198,12 +237,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
 
         <div className="pt-4 border-t border-gray-100 mb-5">
-            <div className="flex justify-center mb-4 space-x-2">
+            <div className="flex justify-center mb-6 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-primary-500"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mb-5">
                 <button onClick={handleBack} className="px-6 py-4 text-gray-500 font-bold rounded-xl active:bg-gray-100">Назад</button>
                 <button 
                     onClick={handleNext} 
@@ -251,7 +290,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     </div>
 
                     <button 
-                        onClick={() => setIsCustomGoal(true)}
+                        onClick={() => {
+                            setIsCustomGoal(true);
+                            setGoalName('');
+                            setGoalCost('');
+                            setGoalImage('');
+                        }}
                         className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center space-x-2 hover:bg-gray-50"
                     >
                         <Upload size={18} />
@@ -263,7 +307,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     <button onClick={() => setIsCustomGoal(false)} className="text-primary-600 font-medium mb-4 flex items-center"><ArrowLeft size={16} className="mr-1"/> Выбрать из списка</button>
                     
                     {/* Fixed Image Upload Preview */}
-                    <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-4 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
+                    <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-2 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                         {goalImage ? (
                              <img src={goalImage} className="w-full h-full object-contain p-2" alt="Preview" />
@@ -280,6 +324,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                             </div>
                         )}
                     </label>
+                    <p className="text-center text-xs text-gray-400 mb-4">добавь изображение своей цели</p>
 
                     <div className="space-y-4">
                          <div>
@@ -308,12 +353,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
 
         <div className="pt-4 border-t border-gray-100 mb-5">
-            <div className="flex justify-center mb-4 space-x-2">
+            <div className="flex justify-center mb-6 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-primary-500"></div>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mb-5">
                  <button onClick={handleBack} className="px-6 py-4 text-gray-500 font-bold rounded-xl active:bg-gray-100">Назад</button>
                  <button 
                     onClick={handleFinish}

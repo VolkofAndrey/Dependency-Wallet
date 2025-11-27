@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
 import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock } from 'lucide-react';
@@ -22,6 +23,7 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
   const [habitCost, setHabitCost] = useState(habit?.costPerOccurrence.toString() || '');
   const [habitFreq, setHabitFreq] = useState<Frequency>(habit?.frequency || Frequency.DAILY);
   const [habitTimesPerDay, setHabitTimesPerDay] = useState(habit?.timesPerDay?.toString() || '');
+  const [habitTimesPerWeek, setHabitTimesPerWeek] = useState(habit?.timesPerWeek?.toString() || '');
 
   // Edit Goal State
   const [goalName, setGoalName] = useState(goal?.name || '');
@@ -34,7 +36,8 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
         ...habit,
         costPerOccurrence: parseFloat(habitCost) || 0,
         frequency: habitFreq,
-        timesPerDay: habitFreq === Frequency.MULTIPLE_DAILY ? (parseInt(habitTimesPerDay) || 1) : undefined
+        timesPerDay: habitFreq === Frequency.MULTIPLE_DAILY ? (parseInt(habitTimesPerDay) || 1) : undefined,
+        timesPerWeek: habitFreq === Frequency.MULTIPLE_WEEKLY ? (parseInt(habitTimesPerWeek) || 1) : undefined
       });
       setEditingHabit(false);
     }
@@ -91,12 +94,12 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
       switch (h.frequency) {
           case Frequency.DAILY:
               return 'День';
-          case Frequency.EVERY_2_DAYS:
-              return 'Каждые 2 дня';
           case Frequency.WEEKLY:
-              return 'в неделю';
+              return 'Раз в неделю';
           case Frequency.MULTIPLE_DAILY:
               return `${h.timesPerDay || 1} раз(а) в день`;
+          case Frequency.MULTIPLE_WEEKLY:
+              return `${h.timesPerWeek || 1} раз(а) в неделю`;
           default:
               return h.frequency;
       }
@@ -154,7 +157,7 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                                 >
                                     <option value={Frequency.DAILY}>Раз в день</option>
                                     <option value={Frequency.MULTIPLE_DAILY}>Несколько раз в день</option>
-                                    <option value={Frequency.EVERY_2_DAYS}>Каждые 2 дня</option>
+                                    <option value={Frequency.MULTIPLE_WEEKLY}>Несколько раз в неделю</option>
                                     <option value={Frequency.WEEKLY}>Раз в неделю</option>
                                 </select>
                             </div>
@@ -167,6 +170,20 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                                         placeholder="5"
                                         value={habitTimesPerDay} 
                                         onChange={e => setHabitTimesPerDay(e.target.value)} 
+                                        className="w-full p-2 border rounded-lg"
+                                    />
+                                </div>
+                            )}
+                            {habitFreq === Frequency.MULTIPLE_WEEKLY && (
+                                <div>
+                                    <label className="text-xs text-gray-400">Сколько раз в неделю?</label>
+                                    <input 
+                                        type="number" 
+                                        min="1"
+                                        max="7"
+                                        placeholder="3"
+                                        value={habitTimesPerWeek} 
+                                        onChange={e => setHabitTimesPerWeek(e.target.value)} 
                                         className="w-full p-2 border rounded-lg"
                                     />
                                 </div>

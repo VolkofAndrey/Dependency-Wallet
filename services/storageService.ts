@@ -1,3 +1,4 @@
+
 import { AppState, DEFAULT_SETTINGS, DailyRecord, Frequency, Habit, Goal, HabitType } from '../types';
 import { ASSETS } from '../data/assets';
 
@@ -38,12 +39,12 @@ export const calculateDailySavings = (habit: Habit): number => {
   switch (habit.frequency) {
     case Frequency.DAILY:
       return habit.costPerOccurrence;
-    case Frequency.EVERY_2_DAYS:
-      return habit.costPerOccurrence / 2;
     case Frequency.WEEKLY:
       return habit.costPerOccurrence / 7;
     case Frequency.MULTIPLE_DAILY:
       return habit.costPerOccurrence * (habit.timesPerDay || 1);
+    case Frequency.MULTIPLE_WEEKLY:
+      return (habit.costPerOccurrence * (habit.timesPerWeek || 1)) / 7;
     default:
       return 0;
   }

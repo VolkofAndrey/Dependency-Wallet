@@ -1,4 +1,5 @@
 
+
 const SUCCESS_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'; // Positive Chime
 const FAIL_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2841/2841-preview.mp3'; // Cartoon Spring Boing
 const ACHIEVEMENT_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'; // Celebration Fanfare
@@ -8,7 +9,7 @@ const audioCache: Record<string, HTMLAudioElement> = {};
 const preloadAudio = (url: string) => {
     try {
         const audio = new Audio(url);
-        audio.volume = 0.5;
+        audio.volume = 0.2;
         audioCache[url] = audio;
     } catch (e) {
         console.error("Audio preload failed", e);
@@ -32,7 +33,7 @@ export const playSound = (type: 'success' | 'fail' | 'achievement') => {
         try {
             const audio = audioCache[url] || new Audio(url);
             audio.currentTime = 0;
-            audio.volume = 0.5;
+            audio.volume = 0.2;
             audio.play().catch(err => console.warn('Audio play prevented:', err));
         } catch (e) {
             console.error("Error playing sound", e);

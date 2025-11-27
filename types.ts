@@ -1,3 +1,4 @@
+
 export enum HabitType {
   SMOKING = 'SMOKING',
   ALCOHOL = 'ALCOHOL',
@@ -8,9 +9,9 @@ export enum HabitType {
 
 export enum Frequency {
   DAILY = 'DAILY',
-  EVERY_2_DAYS = 'EVERY_2_DAYS',
   WEEKLY = 'WEEKLY',
-  MULTIPLE_DAILY = 'MULTIPLE_DAILY'
+  MULTIPLE_DAILY = 'MULTIPLE_DAILY',
+  MULTIPLE_WEEKLY = 'MULTIPLE_WEEKLY'
 }
 
 export interface Habit {
@@ -20,6 +21,7 @@ export interface Habit {
   costPerOccurrence: number;
   frequency: Frequency;
   timesPerDay?: number;
+  timesPerWeek?: number;
   createdAt: number;
 }
 
