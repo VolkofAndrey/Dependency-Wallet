@@ -4,6 +4,14 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     return false;
   }
   
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+  
+  if (Notification.permission === 'denied') {
+    return false;
+  }
+  
   const permission = await Notification.requestPermission();
   return permission === 'granted';
 };

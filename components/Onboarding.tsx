@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { HabitType, Frequency, Habit, Goal } from '../types';
 import { ArrowRight, ArrowLeft, Cigarette, Wine, Zap, Plus, Upload, Check, Sandwich } from 'lucide-react';
@@ -86,8 +87,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
              <div className="absolute inset-0 bg-primary-500 opacity-10 animate-pulse"></div>
              <img src="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80" className="object-cover w-full h-full opacity-90 mix-blend-multiply" alt="Dreams" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Не просто бросай привычку — <br/> <span className="text-primary-600">покупай мечты.</span></h1>
-          <p className="text-gray-600 text-lg">Преврати свои вредные привычки в вещи, о которых ты всегда мечтал. Визуализируй цель, а не просто цифры.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Привет, я <span className="text-primary-600">HabitHero</span></h1>
+          <p className="text-gray-600 text-lg">Я помогу превратить твои вредные привычки в вещи, о которых ты всегда мечтал. Визуализируй цель, а не просто цифры.<br/><br/>Бросай вредные привычки и копи на мечту!</p>
         </div>
         <div className="w-full mb-5">
             <div className="flex justify-center mb-4 space-x-2">

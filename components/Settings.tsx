@@ -72,7 +72,11 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
               onUpdateSettings('dailyReminder', true);
               scheduleNotification('Напоминания включены', 'Мы будем напоминать тебе о целях!', 2000);
           } else {
-              alert('Не удалось включить уведомления. Проверьте настройки браузера.');
+              if (Notification.permission === 'denied') {
+                  alert('Уведомления заблокированы в браузере. Пожалуйста, разрешите их в настройках сайта (значок замка в адресной строке).');
+              } else {
+                  alert('Не удалось включить уведомления. Проверьте настройки браузера.');
+              }
           }
       } else {
           onUpdateSettings('dailyReminder', false);
