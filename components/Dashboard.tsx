@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppState } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
-import { getUnlockedAchievements, getNextAchievement } from '../services/achievementService';
+import { getUnlockedAchievements, getNextAchievement, getAchievementsForHabit, calculateCurrentStreak, Achievement } from '../services/achievementService';
 import { Flame, AlertCircle, CheckCircle2, Lock } from 'lucide-react';
 
 interface DashboardProps {
@@ -46,7 +46,19 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   
   // Достижения
   const unlockedAchievements = getUnlockedAchievements(habit.type, records);
+  const allAchievements = getAchievementsForHabit(habit.type);
   const nextAchievement = getNextAchievement(habit.type, records);
+  
+  const commonAchievements = allAchievements.filter(a => a.category === 'common');
+  const specificAchievements = allAchievements.filter(a => a.category === 'specific');
+
+  // Расчет прогресса для следующей ачивки
+  const getProgressValue = (ach: Achievement) => {
+      if (ach.id === 'week_streak') {
+          return calculateCurrentStreak(records);
+      }
+      return records.filter(r => r.isSuccessful).length;
+  };
 
   useEffect(() => {
     const updateTimer = () => {
@@ -75,13 +87,12 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   }, [daysToGoal]);
 
   const handleSuccess = () => {
-    // Проверяем, была ли разблокирована новая ачивка
     const prevUnlocked = unlockedAchievements.length;
     
     onCheckIn(true);
     setJustCheckedIn(true);
     
-    // Симуляция проверки новой ачивки через 500мс
+    // Симуляция проверки новой ачивки
     setTimeout(() => {
       const newUnlocked = getUnlockedAchievements(habit.type, [...records, {
         id: Date.now().toString(),
@@ -113,6 +124,32 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const getDailyPhrase = (dateStr: string) => {
     const sum = dateStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return SUCCESS_PHRASES[sum % SUCCESS_PHRASES.length];
+  };
+
+  const renderAchievementCard = (achievement: Achievement) => {
+      const isUnlocked = unlockedAchievements.some(u => u.id === achievement.id);
+      
+      return (
+        <div 
+            key={achievement.id}
+            className={`p-3 rounded-xl flex flex-col items-center justify-center border shadow-sm transition-all relative ${
+                isUnlocked 
+                ? 'bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200' 
+                : 'bg-gray-50 border-gray-100'
+            }`}
+        >
+            {!isUnlocked && <Lock size={12} className="text-gray-300 absolute top-2 right-2" />}
+            <span className={`text-3xl mb-1 ${!isUnlocked ? 'grayscale opacity-40' : ''}`}>
+                {achievement.icon}
+            </span>
+            <span className={`text-[10px] text-center font-semibold leading-tight ${isUnlocked ? 'text-primary-700' : 'text-gray-400'}`}>
+                {achievement.title}
+            </span>
+            {!isUnlocked && (
+                 <span className="text-[9px] text-gray-300 mt-0.5 font-medium">{achievement.target} дн.</span>
+            )}
+        </div>
+      );
   };
 
   return (
@@ -183,7 +220,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
              )}
         </div>
 
-        {/* Stats Row - ОБНОВЛЕНО: Streak + Достижения */}
+        {/* Stats Row */}
         <div className="mt-4 grid grid-cols-2 gap-3">
              {/* Streak */}
              <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
@@ -208,53 +245,37 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
         <div className="mt-4 bg-white rounded-2xl shadow-sm p-4">
             <h3 className="text-sm font-bold text-gray-700 mb-3">🏆 Твои достижения</h3>
             
-            <div className="grid grid-cols-3 gap-2">
-                {/* Показываем разблокированные ачивки */}
-                {unlockedAchievements.slice(0, 3).map(achievement => (
-                    <div 
-                        key={achievement.id}
-                        className="bg-gradient-to-br from-primary-50 to-primary-100 p-3 rounded-xl flex flex-col items-center justify-center border border-primary-200 shadow-sm"
-                    >
-                        <span className="text-3xl mb-1">{achievement.icon}</span>
-                        <span className="text-[10px] text-center text-primary-700 font-semibold leading-tight">{achievement.title}</span>
-                    </div>
-                ))}
-                
-                {/* Заполнитель для следующей ачивки */}
-                {nextAchievement && unlockedAchievements.length < 3 && (
-                    <div 
-                        className="bg-gray-50 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 relative"
-                        title={`${nextAchievement.description} (${nextAchievement.target} дней)`}
-                    >
-                        <Lock size={16} className="text-gray-300 absolute top-1 right-1" />
-                        <span className="text-3xl mb-1 grayscale opacity-40">{nextAchievement.icon}</span>
-                        <span className="text-[10px] text-center text-gray-400 font-medium leading-tight">{nextAchievement.title}</span>
-                    </div>
-                )}
-                
-                {/* Пустые слоты */}
-                {Array.from({ length: Math.max(0, 3 - unlockedAchievements.length - (nextAchievement ? 1 : 0)) }).map((_, i) => (
-                    <div key={`empty-${i}`} className="bg-gray-50 p-3 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
-                        <Lock size={20} className="text-gray-300" />
-                    </div>
-                ))}
+            {/* Common Achievements - Row 1 */}
+            <div className="grid grid-cols-3 gap-2 mb-2">
+                {commonAchievements.map(renderAchievementCard)}
+            </div>
+
+            {/* Specific Achievements - Row 2 */}
+            <div className="grid grid-cols-2 gap-2">
+                 {specificAchievements.map(renderAchievementCard)}
             </div>
             
             {/* Прогресс до следующей ачивки */}
             {nextAchievement && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-4 pt-3 border-t border-gray-100">
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-gray-500">До «{nextAchievement.title}»</span>
+                        <span className="text-xs text-gray-500">Следующая: {nextAchievement.title}</span>
                         <span className="text-xs font-bold text-primary-600">
-                            {records.filter(r => r.isSuccessful).length} / {nextAchievement.target}
+                            {getProgressValue(nextAchievement)} / {nextAchievement.target}
                         </span>
                     </div>
                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-primary-500 transition-all"
-                            style={{ width: `${Math.min(100, (records.filter(r => r.isSuccessful).length / nextAchievement.target) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (getProgressValue(nextAchievement) / nextAchievement.target) * 100)}%` }}
                         ></div>
                     </div>
+                </div>
+            )}
+             
+            {!nextAchievement && (
+                <div className="mt-3 pt-3 border-t border-gray-100 text-center">
+                     <p className="text-xs text-primary-600 font-bold">🎉 Все достижения разблокированы!</p>
                 </div>
             )}
         </div>
