@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppState } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
 import { getUnlockedAchievements, getNextAchievement, getAchievementsForHabit, calculateCurrentStreak, Achievement } from '../services/achievementService';
+import { playSound } from '../services/soundService';
 import { Flame, AlertCircle, CheckCircle2, Lock } from 'lucide-react';
 
 interface DashboardProps {
@@ -89,6 +91,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const handleSuccess = () => {
     const prevUnlocked = unlockedAchievements.length;
     
+    // Haptic feedback for success (short, rhythmic)
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    
+    playSound('success');
     onCheckIn(true);
     setJustCheckedIn(true);
     
@@ -103,6 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
       }]);
       
       if (newUnlocked.length > prevUnlocked) {
+        playSound('achievement');
         const newAch = newUnlocked[newUnlocked.length - 1];
         setShowNewAchievement(`${newAch.icon} ${newAch.title}`);
         setTimeout(() => setShowNewAchievement(null), 3000);
@@ -113,6 +120,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   };
 
   const handleRelapse = () => {
+    // Haptic feedback for failure (long, heavy)
+    if (navigator.vibrate) navigator.vibrate(300);
+    
+    playSound('fail');
     onCheckIn(false);
     setShowRelapseConfirm(false);
   };

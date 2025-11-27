@@ -125,4 +125,24 @@ export const SUGGESTED_GOALS = [
     price: 25000, 
     img: ASSETS.NIKE
   },
+  { 
+    name: 'Обучение/Курсы', 
+    price: 80000, 
+    img: ASSETS.EDUCATION
+  },
+  { 
+    name: 'Кофемашина', 
+    price: 45000, 
+    img: ASSETS.COFFEE
+  },
+  { 
+    name: 'Шуба', 
+    price: 150000, 
+    img: ASSETS.COAT
+  },
+  { 
+    name: 'Фотоаппарат', 
+    price: 200000, 
+    img: ASSETS.CAMERA
+  },
 ];
