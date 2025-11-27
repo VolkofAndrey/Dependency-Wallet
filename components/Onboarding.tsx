@@ -89,7 +89,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Не просто бросай привычку — <br/> <span className="text-primary-600">покупай мечты.</span></h1>
           <p className="text-gray-600 text-lg">Преврати свои вредные привычки в вещи, о которых ты всегда мечтал. Визуализируй цель, а не просто цифры.</p>
         </div>
-        <div className="w-full">
+        <div className="w-full mb-5">
             <div className="flex justify-center mb-4 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-primary-500"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
@@ -196,7 +196,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             )}
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
+        <div className="pt-4 border-t border-gray-100 mb-5">
             <div className="flex justify-center mb-4 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-primary-500"></div>
@@ -306,7 +306,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             )}
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
+        <div className="pt-4 border-t border-gray-100 mb-5">
             <div className="flex justify-center mb-4 space-x-2">
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>
                 <div className="w-3 h-3 rounded-full bg-gray-300"></div>

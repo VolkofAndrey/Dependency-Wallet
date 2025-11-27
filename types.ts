@@ -57,7 +57,7 @@ export interface AppState {
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   dailyReminder: true,
-  dailyReminderTime: '09:00',
+  dailyReminderTime: '18:00',
   weeklyReminder: true,
   onboardingCompleted: false,
 };

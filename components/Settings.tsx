@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
 
 interface SettingsProps {
@@ -77,6 +77,10 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
       } else {
           onUpdateSettings('dailyReminder', false);
       }
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onUpdateSettings('dailyReminderTime', e.target.value);
   };
 
   const getFrequencyLabel = (h: Habit) => {
@@ -235,7 +239,10 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                     <div className="p-4 flex items-center justify-between">
                         <div className="flex items-center space-x-3 text-gray-700">
                             <Bell size={20} />
-                            <span>Ежедневные напоминания</span>
+                            <div>
+                                <p>Ежедневные напоминания</p>
+                                <p className="text-xs text-gray-400">По умолчанию в 18:00</p>
+                            </div>
                         </div>
                         <div 
                             onClick={handleToggleNotifications}
@@ -244,6 +251,20 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${settings.dailyReminder ? 'left-7' : 'left-1'}`}></div>
                         </div>
                     </div>
+                    {settings.dailyReminder && (
+                        <div className="p-4 flex items-center justify-between bg-gray-50">
+                             <div className="flex items-center space-x-2 text-gray-600">
+                                <Clock size={16} />
+                                <span className="text-sm">Время уведомления</span>
+                             </div>
+                             <input 
+                                type="time" 
+                                value={settings.dailyReminderTime || '18:00'}
+                                onChange={handleTimeChange}
+                                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                             />
+                        </div>
+                    )}
                 </div>
             </section>
 

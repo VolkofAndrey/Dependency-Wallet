@@ -14,19 +14,44 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const loaded = loadState();
-    setState(loaded);
-    
-    // Простой пример шедулинга при запуске, если включено
-    if (loaded && loaded.settings.dailyReminder) {
-        scheduleNotification('Напоминание', 'Не забудь отметить свой прогресс сегодня!', 1000 * 60 * 60 * 5); // Через 5 часов (демо)
+    // Ensure default settings are merged if new fields are added (like dailyReminderTime)
+    if (loaded) {
+        loaded.settings = { ...DEFAULT_SETTINGS, ...loaded.settings };
+        if (!loaded.settings.dailyReminderTime) {
+            loaded.settings.dailyReminderTime = '18:00';
+        }
     }
+    setState(loaded);
   }, []);
 
   useEffect(() => {
     if (state) {
       saveState(state);
+      
+      // Update Notification Schedule when settings change
+      if (state.settings.dailyReminder) {
+         scheduleNextNotification(state.settings.dailyReminderTime);
+      }
     }
   }, [state]);
+
+  const scheduleNextNotification = (timeStr: string) => {
+      const [h, m] = timeStr.split(':').map(Number);
+      const now = new Date();
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+
+      if (target <= now) {
+          // If time passed today, schedule for tomorrow
+          target.setDate(target.getDate() + 1);
+      }
+
+      const delay = target.getTime() - now.getTime();
+      
+      // In a real app we would cancel previous timers, but for this demo/MVP 
+      // simple scheduling works. This will queue a notification.
+      scheduleNotification('HabitHero Напоминание', 'Не забудь отметить свой прогресс сегодня!', delay);
+  };
 
   const handleOnboardingComplete = (habit: Habit, goal: Goal) => {
     if (!state) return;
