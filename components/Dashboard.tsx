@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AppState } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
-import { Flame, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getUnlockedAchievements, getNextAchievement } from '../services/achievementService';
+import { Flame, AlertCircle, CheckCircle2, Lock } from 'lucide-react';
 
 interface DashboardProps {
   state: AppState;
@@ -31,6 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number }>({ d: 0, h: 0, m: 0 });
   const [showRelapseConfirm, setShowRelapseConfirm] = useState(false);
   const [justCheckedIn, setJustCheckedIn] = useState(false);
+  const [showNewAchievement, setShowNewAchievement] = useState<string | null>(null);
 
   if (!habit || !goal) return null;
 
@@ -41,6 +43,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const streak = calculateStreak(records);
   
   const todayRecord = getTodayRecord(records);
+  
+  // Достижения
+  const unlockedAchievements = getUnlockedAchievements(habit.type, records);
+  const nextAchievement = getNextAchievement(habit.type, records);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -69,8 +75,29 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   }, [daysToGoal]);
 
   const handleSuccess = () => {
+    // Проверяем, была ли разблокирована новая ачивка
+    const prevUnlocked = unlockedAchievements.length;
+    
     onCheckIn(true);
     setJustCheckedIn(true);
+    
+    // Симуляция проверки новой ачивки через 500мс
+    setTimeout(() => {
+      const newUnlocked = getUnlockedAchievements(habit.type, [...records, {
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        isSuccessful: true,
+        amountSaved: dailySavings,
+        createdAt: Date.now()
+      }]);
+      
+      if (newUnlocked.length > prevUnlocked) {
+        const newAch = newUnlocked[newUnlocked.length - 1];
+        setShowNewAchievement(`${newAch.icon} ${newAch.title}`);
+        setTimeout(() => setShowNewAchievement(null), 3000);
+      }
+    }, 500);
+    
     setTimeout(() => setJustCheckedIn(false), 2000);
   };
 
@@ -99,12 +126,10 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24 px-4 pt-2">
         
-        {/* Main Goal Card - Changed to aspect-square to increase vertical size */}
+        {/* Main Goal Card */}
         <div className="relative w-full aspect-square rounded-[32px] overflow-hidden shadow-xl mb-4 group bg-gray-900">
-            {/* Added bg-gray-900 and object-contain to ensure image is visible and not cropped */}
             <img src={goal.imagePath} alt="Goal" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" />
             
-            {/* Darker overlay for text readability against any background */}
             <div className="absolute inset-0 bg-black/40"></div>
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
             
@@ -120,7 +145,6 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
                     <span className="font-bold text-3xl">{progressPercent.toFixed(1)}%</span>
                     <span className="text-sm opacity-80 mb-1">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
                 </div>
-                {/* Progress Bar */}
                 <div className="w-full h-3 bg-white/20 rounded-full backdrop-blur-sm overflow-hidden">
                     <div 
                         className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(76,175,80,0.8)]"
@@ -159,8 +183,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
              )}
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Row - ОБНОВЛЕНО: Streak + Достижения */}
         <div className="mt-4 grid grid-cols-2 gap-3">
+             {/* Streak */}
              <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
                 <div className="flex items-center space-x-2 text-orange-500 mb-1">
                     <Flame fill="currentColor" size={18} />
@@ -169,12 +194,69 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
                 <span className="text-xl font-bold text-gray-800">{streak} <span className="text-xs font-normal text-gray-400">дней</span></span>
              </div>
              
-             <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
-                 <p className="text-xs text-gray-500 mb-1">Не куплено</p>
-                 <span className="text-lg font-bold text-gray-800 text-center leading-tight">
-                    {Math.floor(totalSaved / habit.costPerOccurrence)} <span className="text-xs font-normal text-gray-400">ед.</span>
-                 </span>
+             {/* Достижения */}
+             <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                 <p className="text-xs text-gray-500 mb-1">Достижения</p>
+                 <div className="flex items-center space-x-1">
+                    <span className="text-2xl font-bold text-primary-600">{unlockedAchievements.length}</span>
+                    <span className="text-xs text-gray-400">/ 5</span>
+                 </div>
              </div>
+        </div>
+
+        {/* Achievement Cards */}
+        <div className="mt-4 bg-white rounded-2xl shadow-sm p-4">
+            <h3 className="text-sm font-bold text-gray-700 mb-3">🏆 Твои достижения</h3>
+            
+            <div className="grid grid-cols-3 gap-2">
+                {/* Показываем разблокированные ачивки */}
+                {unlockedAchievements.slice(0, 3).map(achievement => (
+                    <div 
+                        key={achievement.id}
+                        className="bg-gradient-to-br from-primary-50 to-primary-100 p-3 rounded-xl flex flex-col items-center justify-center border border-primary-200 shadow-sm"
+                    >
+                        <span className="text-3xl mb-1">{achievement.icon}</span>
+                        <span className="text-[10px] text-center text-primary-700 font-semibold leading-tight">{achievement.title}</span>
+                    </div>
+                ))}
+                
+                {/* Заполнитель для следующей ачивки */}
+                {nextAchievement && unlockedAchievements.length < 3 && (
+                    <div 
+                        className="bg-gray-50 p-3 rounded-xl flex flex-col items-center justify-center border border-gray-200 relative"
+                        title={`${nextAchievement.description} (${nextAchievement.target} дней)`}
+                    >
+                        <Lock size={16} className="text-gray-300 absolute top-1 right-1" />
+                        <span className="text-3xl mb-1 grayscale opacity-40">{nextAchievement.icon}</span>
+                        <span className="text-[10px] text-center text-gray-400 font-medium leading-tight">{nextAchievement.title}</span>
+                    </div>
+                )}
+                
+                {/* Пустые слоты */}
+                {Array.from({ length: Math.max(0, 3 - unlockedAchievements.length - (nextAchievement ? 1 : 0)) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="bg-gray-50 p-3 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                        <Lock size={20} className="text-gray-300" />
+                    </div>
+                ))}
+            </div>
+            
+            {/* Прогресс до следующей ачивки */}
+            {nextAchievement && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-gray-500">До «{nextAchievement.title}»</span>
+                        <span className="text-xs font-bold text-primary-600">
+                            {records.filter(r => r.isSuccessful).length} / {nextAchievement.target}
+                        </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-primary-500 transition-all"
+                            style={{ width: `${Math.min(100, (records.filter(r => r.isSuccessful).length / nextAchievement.target) * 100)}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )}
         </div>
 
       </div>
@@ -183,6 +265,19 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
       {justCheckedIn && (
           <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
               <div className="text-primary-600 font-bold text-6xl animate-[ping_1s_ease-out_infinite] opacity-50">+{formatMoney(dailySavings)}₽</div>
+          </div>
+      )}
+
+      {/* New Achievement Popup */}
+      {showNewAchievement && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-4 rounded-2xl shadow-2xl animate-in zoom-in-95 slide-in-from-top-10 duration-500">
+              <div className="flex items-center space-x-3">
+                  <span className="text-4xl">🎉</span>
+                  <div>
+                      <p className="text-xs font-medium opacity-90">Новое достижение!</p>
+                      <p className="font-bold text-lg">{showNewAchievement}</p>
+                  </div>
+              </div>
           </div>
       )}
 

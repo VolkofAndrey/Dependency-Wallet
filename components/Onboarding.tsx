@@ -238,7 +238,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 className={`relative group rounded-xl overflow-hidden cursor-pointer border-2 bg-white shadow-sm ${goalName === g.name ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-100'}`}
                             >
                                 <div className="w-full h-32 bg-white p-2 flex items-center justify-center">
-                                    <img src={g.img} className="max-w-full max-h-full object-contain transition-transform group-hover:scale-105" alt={g.name} />
+                                    <img src={g.img} className="w-full h-full object-contain transition-transform group-hover:scale-105" alt={g.name} />
                                 </div>
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 pt-6">
                                     <span className="text-white font-bold text-sm leading-tight block">{g.name}</span>
