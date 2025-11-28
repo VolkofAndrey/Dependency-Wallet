@@ -170,7 +170,7 @@ const App: React.FC = () => {
                             className={`flex flex-col items-center space-y-1 ${currentTab === 'history' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
                          >
                              <BarChart2 size={24} strokeWidth={currentTab === 'history' ? 2.5 : 2} />
-                             <span className="text-[10px] font-medium">История</span>
+                             <span className="text-[10px] font-medium">Прогресс</span>
                          </button>
 
                          <button 

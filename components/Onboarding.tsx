@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { HabitType, Frequency, Habit, Goal } from '../types';
 import { ArrowRight, ArrowLeft, Cigarette, Wine, Zap, Plus, Upload, Check, Sandwich, Coffee } from 'lucide-react';
@@ -387,14 +386,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                     setGoalCost(g.price.toString());
                                     setGoalImage(g.img);
                                 }}
-                                className={`relative group rounded-xl overflow-hidden cursor-pointer border-2 bg-white shadow-sm ${goalName === g.name ? 'border-primary-500 ring-2 ring-primary-200' : 'border-gray-100'}`}
+                                className={`relative group rounded-xl overflow-hidden cursor-pointer bg-white shadow-sm transition-all ${
+                                    goalName === g.name ? 'border-2 border-primary-500 ring-2 ring-primary-200' : 'border border-gray-100 hover:border-gray-300'
+                                }`}
                             >
-                                <div className="w-full h-32 bg-white p-2 flex items-center justify-center">
-                                    <img src={g.img} className="w-full h-full object-contain transition-transform group-hover:scale-105" alt={g.name} />
+                                <div className="w-full h-24 bg-white p-2 flex items-center justify-center">
+                                    <img src={g.img} className="w-full h-full object-contain" alt={g.name} />
                                 </div>
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 pt-6">
-                                    <span className="text-white font-bold text-sm leading-tight block">{g.name}</span>
-                                    <span className="text-white/90 text-xs">{g.price.toLocaleString()}₽</span>
+                                <div className="p-3 border-t border-gray-100 bg-gray-50">
+                                    <span className="text-gray-900 font-bold text-sm leading-tight block truncate">{g.name}</span>
+                                    <span className="text-gray-500 text-xs font-medium">{g.price.toLocaleString()}₽</span>
                                 </div>
                                 {goalName === g.name && <div className="absolute top-2 right-2 bg-primary-500 text-white p-1 rounded-full shadow-md"><Check size={12}/></div>}
                             </div>

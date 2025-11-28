@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppState } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
@@ -175,27 +174,28 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24 px-4 pt-2">
         
         {/* Main Goal Card */}
-        <div className="relative w-full aspect-square rounded-[32px] overflow-hidden shadow-xl mb-4 group bg-gray-900">
+        <div className="relative w-full aspect-square rounded-[32px] overflow-hidden shadow-xl mb-4 group bg-white border border-gray-100">
             <img src={goal.imagePath} alt="Goal" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" />
             
-            <div className="absolute inset-0 bg-black/40"></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
-            
-            <div className="absolute top-0 w-full p-6 text-center">
-                <p className="text-white/80 font-medium mb-1">До {goal.name} осталось</p>
-                <div className="text-white font-bold text-4xl tracking-tight drop-shadow-lg">
-                    {timeLeft.d}<span className="text-xl font-normal opacity-70">д</span> : {timeLeft.h}<span className="text-xl font-normal opacity-70">ч</span> : {timeLeft.m}<span className="text-xl font-normal opacity-70">м</span>
+            {/* Timer Overlay with Background */}
+            <div className="absolute top-0 w-full p-6 flex justify-center pointer-events-none">
+                <div className="bg-white/95 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                    <p className="text-gray-500 font-medium mb-1 text-sm">До {goal.name} осталось</p>
+                    <div className="text-gray-900 font-bold text-3xl tracking-tight">
+                        {timeLeft.d}<span className="text-lg font-normal opacity-70">д</span> : {timeLeft.h}<span className="text-lg font-normal opacity-70">ч</span> : {timeLeft.m}<span className="text-lg font-normal opacity-70">м</span>
+                    </div>
                 </div>
             </div>
 
             <div className="absolute bottom-0 w-full p-6">
-                <div className="flex justify-between items-end mb-2 text-white">
+                <div className="flex justify-between items-end mb-2 text-gray-900">
                     <span className="font-bold text-3xl">{progressPercent.toFixed(1)}%</span>
                     <span className="text-sm opacity-80 mb-1">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
                 </div>
-                <div className="w-full h-3 bg-white/20 rounded-full backdrop-blur-sm overflow-hidden">
+                {/* Changed track color for visibility on white */}
+                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div 
-                        className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(76,175,80,0.8)]"
+                        className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(76,175,80,0.4)]"
                         style={{ width: `${progressPercent}%` }}
                     ></div>
                 </div>

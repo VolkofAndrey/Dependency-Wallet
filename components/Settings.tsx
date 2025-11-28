@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
 
 interface SettingsProps {
@@ -128,7 +127,7 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
             
             {/* Habit Section */}
             <section>
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 ml-2">Моя привычка</h3>
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 ml-2">Какую привычку бросаю</h3>
                 <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                     {!editingHabit ? (
                         <div className="p-4 flex items-center justify-between border-b border-gray-100">
@@ -205,7 +204,6 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                     {!editingGoal ? (
                         <div className="p-4 flex items-center justify-between">
                             <div className="flex items-center space-x-3 w-full overflow-hidden">
-                                {/* Fixed: Object Contain and Background for Thumbnails */}
                                 <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0">
                                    <img src={goal?.imagePath} alt="Goal" className="w-full h-full rounded-lg object-contain" />
                                 </div>
@@ -317,6 +315,18 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         </div>
                         <ChevronRight size={16} className="text-gray-400"/>
                     </button>
+                    
+                    <button 
+                        onClick={() => window.location.href = 'mailto:support@habithero.app'}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 text-left"
+                    >
+                         <div className="flex items-center space-x-3 text-gray-700">
+                            <Mail size={20} />
+                            <span>Связь с разработчиком</span>
+                        </div>
+                         <ChevronRight size={16} className="text-gray-400"/>
+                    </button>
+
                     <button 
                         onClick={() => setShowAbout(true)}
                         className="w-full p-4 flex items-center justify-between hover:bg-gray-50 text-left"
@@ -407,11 +417,6 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                             </div>
 
                             <p className="text-center italic pt-2">Разработано с ❤️ для тех, кто стремится к лучшему</p>
-                        </div>
-
-                        <div className="text-center border-t border-gray-100 pt-4 space-y-1">
-                            <p className="text-xs text-gray-400">Связь: support@habithero.app</p>
-                            <p className="text-xs text-gray-400">Версия: 1.0.4</p>
                         </div>
                     </div>
                 </div>
