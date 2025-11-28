@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, AlertCircle, X, Clock, Mail, Upload, Plus, Cigarette, Coffee, Wine, Zap, Sandwich, Check, ArrowLeft } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, AlertCircle, X, Clock, Mail, Upload, Plus, Cigarette, Coffee, Wine, Zap, Sandwich, Check, ArrowLeft, RotateCcw } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
 import { calculateDailySavings, SUGGESTED_GOALS } from '../services/storageService';
 
@@ -16,6 +17,7 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
   const { habit, goal, settings } = state;
   const [showDeleteHabitConfirm, setShowDeleteHabitConfirm] = useState(false);
   const [showDeleteGoalConfirm, setShowDeleteGoalConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
   // Add Habit State (similar to Onboarding)
@@ -629,6 +631,17 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         </div>
                          <ChevronRight size={16} className="text-gray-400"/>
                     </button>
+
+                    <button 
+                        onClick={() => setShowResetConfirm(true)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-red-50 text-left"
+                    >
+                         <div className="flex items-center space-x-3 text-error">
+                            <RotateCcw size={20} />
+                            <span>Сбросить все данные</span>
+                        </div>
+                         <ChevronRight size={16} className="text-gray-400"/>
+                    </button>
                 </div>
             </section>
             
@@ -665,6 +678,25 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowDeleteGoalConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
                             <button onClick={confirmDeleteGoal} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reset Data Confirmation Modal */}
+            {showResetConfirm && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-center mb-4 text-error">
+                            <AlertCircle size={48} />
+                        </div>
+                        <h3 className="text-center text-xl font-bold text-gray-900 mb-2">Сбросить всё?</h3>
+                        <p className="text-center text-gray-500 mb-6">
+                            Это удалит все твои привычки, цели и историю прогресса. Это действие нельзя отменить.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setShowResetConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
+                            <button onClick={() => { onReset(); setShowResetConfirm(false); }} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Сбросить</button>
                         </div>
                     </div>
                 </div>

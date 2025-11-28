@@ -184,7 +184,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
             
             {/* Timer Card Overlay */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-auto max-w-[90%] z-10">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-sm border border-white/50 text-center">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-3 py-1.5 shadow-sm border border-white/50 text-center">
                     <p className="text-gray-600 text-xs font-medium mb-1 uppercase tracking-wide">До {goal.name} осталось</p>
                     <div className="text-gray-900 font-bold text-3xl tracking-tight whitespace-nowrap">
                         {timeLeft.d}<span className="text-sm font-normal text-gray-500 ml-0.5 mr-2">д</span>
@@ -196,7 +196,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
 
             {/* Progress Card Overlay - Floating at bottom */}
             <div className="absolute bottom-4 inset-x-4 z-10">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-sm border border-white/50">
                     <div className="flex justify-between items-end mb-2">
                         <span className="font-bold text-2xl text-primary-600">{progressPercent.toFixed(1)}%</span>
                         <span className="text-sm text-gray-600 mb-1 font-medium">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
