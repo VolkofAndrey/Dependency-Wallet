@@ -1,16 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { AppState, Goal, AchievedGoal, DailyRecord } from '../types';
-import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord, SUGGESTED_GOALS } from '../services/storageService';
+import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
 import { getUnlockedAchievements, getNextAchievement, getAchievementsForHabit, calculateCurrentStreak, Achievement } from '../services/achievementService';
 import { playSound } from '../services/soundService';
-import { Flame, AlertCircle, CheckCircle2, Lock, Share2, Upload, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Flame, AlertCircle, CheckCircle2, Lock, Share2, Target, ArrowRight } from 'lucide-react';
 
 interface DashboardProps {
   state: AppState;
   onCheckIn: (success: boolean) => void;
   onArchiveGoal: (achievedGoal: AchievedGoal) => void;
-  onUpdateGoal: (goal: Goal) => void;
+  onRequestTabChange: (tab: 'dashboard' | 'history' | 'settings') => void;
 }
 
 const SUCCESS_PHRASES = [
@@ -89,7 +89,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({ ach, unlockedAchievem
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn, onArchiveGoal, onUpdateGoal }) => {
+const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn, onArchiveGoal, onRequestTabChange }) => {
   const { habit, goal, records } = state;
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number }>({ d: 0, h: 0, m: 0 });
   const [showRelapseConfirm, setShowRelapseConfirm] = useState(false);
@@ -97,12 +97,6 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn, onArchiveGoal, 
   const [showNewAchievement, setShowNewAchievement] = useState<Achievement | null>(null);
   const [showGoalAchieved, setShowGoalAchieved] = useState(false);
   
-  // New Goal Selection State
-  const [isCustomGoal, setIsCustomGoal] = useState(false);
-  const [newGoalName, setNewGoalName] = useState('');
-  const [newGoalTarget, setNewGoalTarget] = useState('');
-  const [newGoalImage, setNewGoalImage] = useState('');
-
   const prevUnlockedCount = useRef(0);
 
   // Initial ref setup
@@ -160,86 +154,25 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn, onArchiveGoal, 
 
   if (!habit) return null;
 
-  // Если цель не установлена (например, после достижения), показываем выбор новой цели
+  // Если цель не установлена, показываем заглушку с предложением перейти в настройки
   if (!goal) {
-      const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => { if(event.target?.result) setNewGoalImage(event.target.result as string); };
-        reader.readAsDataURL(file);
-      };
-
-      const handleSaveNewGoal = () => {
-          if (!newGoalName || !newGoalTarget) return;
-          const newG: Goal = {
-              id: Date.now().toString(),
-              name: newGoalName,
-              targetAmount: parseFloat(newGoalTarget),
-              imagePath: newGoalImage,
-              createdAt: Date.now()
-          };
-          onUpdateGoal(newG);
-          // Reset local state
-          setNewGoalName(''); setNewGoalTarget(''); setNewGoalImage(''); setIsCustomGoal(false);
-      };
-
       return (
-          <div className="flex flex-col h-full bg-gray-50 overflow-y-auto no-scrollbar p-6">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 mt-8">Выбери новую цель</h2>
-              <p className="text-gray-500 mb-6">Ты отлично справился! Продолжай копить на следующую мечту.</p>
+          <div className="flex flex-col h-full bg-gray-50 p-6 items-center justify-center text-center animate-in fade-in">
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-100 text-primary-200">
+                  <Target size={48} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Цель не выбрана</h2>
+              <p className="text-gray-500 mb-8 max-w-xs mx-auto">
+                  Чтобы продолжить копить и видеть прогресс, выберите новую цель в настройках.
+              </p>
               
-              {!isCustomGoal ? (
-                <>
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                        {SUGGESTED_GOALS.map((g, idx) => (
-                            <div key={idx} onClick={() => { setNewGoalName(g.name); setNewGoalTarget(g.price.toString()); setNewGoalImage(g.img); }}
-                                className={`relative group rounded-xl overflow-hidden cursor-pointer bg-white shadow-sm transition-all ${newGoalName === g.name ? 'border-2 border-primary-500' : 'border border-gray-100'}`}
-                            >
-                                <div className="w-full h-24 bg-white p-2 flex items-center justify-center">
-                                    <img src={g.img} className="w-full h-full object-contain" alt={g.name} />
-                                </div>
-                                <div className="p-3 border-t border-gray-100 bg-gray-50">
-                                    <span className="text-gray-900 font-bold text-xs leading-tight block truncate">{g.name}</span>
-                                    <span className="text-gray-500 text-[10px] font-medium">{g.price.toLocaleString()}₽</span>
-                                </div>
-                                {newGoalName === g.name && <div className="absolute top-2 right-2 bg-primary-500 text-white p-1 rounded-full shadow-md"><Check size={12}/></div>}
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={() => { setIsCustomGoal(true); setNewGoalName(''); setNewGoalTarget(''); setNewGoalImage(''); }} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center space-x-2">
-                        <Upload size={18} /><span>Загрузить свою цель</span>
-                    </button>
-                    
-                    <button 
-                        onClick={handleSaveNewGoal} 
-                        disabled={!newGoalName || !newGoalTarget} 
-                        className="w-full py-4 mt-6 bg-primary-600 disabled:opacity-50 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2"
-                    >
-                        <span>Начать копить!</span>
-                        <ArrowRight size={20} />
-                    </button>
-                </>
-              ) : (
-                  <div className="animate-in fade-in">
-                        <button onClick={() => setIsCustomGoal(false)} className="text-primary-600 font-medium mb-4 flex items-center text-sm"><ArrowLeft size={16} className="mr-1"/> Выбрать из списка</button>
-                        <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-4 border-2 border-dashed border-gray-300 cursor-pointer">
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                            {newGoalImage ? <img src={newGoalImage} className="w-full h-full object-contain p-2" /> : <div className="text-center"><Upload size={32} className="mx-auto mb-2 text-gray-400"/><span className="text-xs text-gray-400">Загрузить фото</span></div>}
-                        </label>
-                        <input type="text" value={newGoalName} onChange={(e) => setNewGoalName(e.target.value)} className="w-full p-3 mb-3 rounded-xl border border-gray-300 outline-none" placeholder="Название цели" />
-                        <input type="number" value={newGoalTarget} onChange={(e) => setNewGoalTarget(e.target.value)} className="w-full p-3 mb-4 rounded-xl border border-gray-300 outline-none" placeholder="Стоимость (₽)" />
-                        
-                        <button 
-                            onClick={handleSaveNewGoal} 
-                            disabled={!newGoalName || !newGoalTarget} 
-                            className="w-full py-4 mt-6 bg-primary-600 disabled:opacity-50 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2"
-                        >
-                            <span>Начать копить!</span>
-                            <ArrowRight size={20} />
-                        </button>
-                  </div>
-              )}
+              <button 
+                  onClick={() => onRequestTabChange('settings')}
+                  className="w-full max-w-xs py-4 bg-primary-600 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2"
+              >
+                  <span>Перейти в настройки</span>
+                  <ArrowRight size={20} />
+              </button>
           </div>
       );
   }
@@ -300,6 +233,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn, onArchiveGoal, 
       };
       onArchiveGoal(achieved);
       setShowGoalAchieved(false);
+      
+      // Redirect to Settings to pick a new goal
+      onRequestTabChange('settings');
   };
 
   const formatMoney = (amount: number) => Math.round(amount).toLocaleString('ru-RU');

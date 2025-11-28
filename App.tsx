@@ -155,7 +155,7 @@ const App: React.FC = () => {
                                 state={state} 
                                 onCheckIn={handleCheckIn} 
                                 onArchiveGoal={handleArchiveGoal}
-                                onUpdateGoal={handleUpdateGoal}
+                                onRequestTabChange={setCurrentTab}
                             />
                         )}
                         {currentTab === 'history' && (
