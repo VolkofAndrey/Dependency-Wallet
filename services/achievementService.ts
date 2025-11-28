@@ -198,7 +198,10 @@ export const getAchievementsForHabit = (habitType: HabitType): Achievement[] => 
     ]
   };
 
-  return [...commonAchievements, ...(habitSpecificAchievements[habitType] || [])];
+  const allAchievements = [...commonAchievements, ...(habitSpecificAchievements[habitType] || [])];
+  
+  // Сортируем по target, чтобы обеспечить порядок 1 -> 3 -> 7 -> 14 -> 30
+  return allAchievements.sort((a, b) => a.target - b.target);
 };
 
 export const getNextAchievement = (habitType: HabitType, records: DailyRecord[]): Achievement | null => {
