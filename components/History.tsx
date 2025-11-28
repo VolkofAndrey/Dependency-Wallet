@@ -113,7 +113,7 @@ const History: React.FC<HistoryProps> = ({ state }) => {
                                    <stop offset="95%" stopColor="#4CAF50" stopOpacity={0}/>
                                </linearGradient>
                            </defs>
-                           <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value) => [`${value}₽`, 'Сэкономлено']} />
+                           <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} formatter={(value: number) => [`${Math.round(value)}₽`, 'Сэкономлено']} />
                            <Area type="monotone" dataKey="amount" stroke="#4CAF50" strokeWidth={3} fillOpacity={1} fill="url(#colorAmt)" />
                        </AreaChart>
                    </ResponsiveContainer>
