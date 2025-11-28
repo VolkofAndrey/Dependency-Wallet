@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AppState, DailyRecord } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
@@ -182,9 +183,9 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
             </div>
             
             {/* Timer Card Overlay */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 w-auto max-w-[90%]">
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-sm border border-white/50 text-center">
-                    <p className="text-gray-500 text-xs font-medium mb-1 uppercase tracking-wide">До {goal.name} осталось</p>
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 w-auto max-w-[90%] z-10">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-sm border border-white/50 text-center">
+                    <p className="text-gray-600 text-xs font-medium mb-1 uppercase tracking-wide">До {goal.name} осталось</p>
                     <div className="text-gray-900 font-bold text-3xl tracking-tight whitespace-nowrap">
                         {timeLeft.d}<span className="text-sm font-normal text-gray-500 ml-0.5 mr-2">д</span>
                         {timeLeft.h}<span className="text-sm font-normal text-gray-500 ml-0.5 mr-2">ч</span>
@@ -193,16 +194,19 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
                 </div>
             </div>
 
-            <div className="absolute bottom-0 w-full p-6 bg-white/80 backdrop-blur-md border-t border-gray-100">
-                <div className="flex justify-between items-end mb-2">
-                    <span className="font-bold text-3xl text-primary-600">{progressPercent.toFixed(1)}%</span>
-                    <span className="text-sm text-gray-500 mb-1 font-medium">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
-                </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                        className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(76,175,80,0.4)]"
-                        style={{ width: `${progressPercent}%` }}
-                    ></div>
+            {/* Progress Card Overlay - Floating at bottom */}
+            <div className="absolute bottom-4 inset-x-4 z-10">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
+                    <div className="flex justify-between items-end mb-2">
+                        <span className="font-bold text-2xl text-primary-600">{progressPercent.toFixed(1)}%</span>
+                        <span className="text-sm text-gray-600 mb-1 font-medium">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(76,175,80,0.4)]"
+                            style={{ width: `${progressPercent}%` }}
+                        ></div>
+                    </div>
                 </div>
             </div>
         </div>
