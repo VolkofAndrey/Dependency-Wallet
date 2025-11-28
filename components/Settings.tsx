@@ -108,7 +108,8 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
   const getHabitLabel = (h: Habit) => {
     if (h.customName) return h.customName;
     switch(h.type) {
-        case HabitType.SMOKING: return 'Курение/Вейпинг';
+        case HabitType.SMOKING: return 'Курение';
+        case HabitType.COFFEE: return 'Кофе в кафе';
         case HabitType.ALCOHOL: return 'Алкоголь';
         case HabitType.ENERGY_DRINKS: return 'Энергетики';
         case HabitType.FAST_FOOD: return 'Фастфуд';

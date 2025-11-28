@@ -2,6 +2,7 @@
 export enum HabitType {
   SMOKING = 'SMOKING',
   ALCOHOL = 'ALCOHOL',
+  COFFEE = 'COFFEE',
   ENERGY_DRINKS = 'ENERGY_DRINKS',
   FAST_FOOD = 'FAST_FOOD',
   OTHER = 'OTHER'

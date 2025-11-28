@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { HabitType, Frequency, Habit, Goal } from '../types';
-import { ArrowRight, ArrowLeft, Cigarette, Wine, Zap, Plus, Upload, Check, Sandwich } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Cigarette, Wine, Zap, Plus, Upload, Check, Sandwich, Coffee } from 'lucide-react';
 import { calculateDailySavings, SUGGESTED_GOALS } from '../services/storageService';
 import { ASSETS } from '../data/assets';
 
@@ -28,6 +28,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
   const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => setStep(prev => prev - 1);
+
+  // Блокировка ввода спецсимволов и отрицательных знаков
+  const preventInvalidInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
 
   const getDailyCost = () => {
     const costNum = parseFloat(cost) || 0;
@@ -137,7 +144,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             
             <div className="grid grid-cols-2 gap-4 mb-8">
                 {[
-                    { type: HabitType.SMOKING, label: 'Курение/Вейпинг', icon: <Cigarette /> },
+                    { type: HabitType.SMOKING, label: 'Курение', icon: <Cigarette /> },
+                    { type: HabitType.COFFEE, label: 'Кофе в кафе', icon: <Coffee /> },
                     { type: HabitType.ALCOHOL, label: 'Алкоголь', icon: <Wine /> },
                     { type: HabitType.ENERGY_DRINKS, label: 'Энергетики', icon: <Zap /> },
                     { type: HabitType.FAST_FOOD, label: 'Фастфуд', icon: <Sandwich /> },
@@ -145,12 +153,19 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 ].map((item) => (
                     <button
                         key={item.type}
-                        onClick={() => setHabitType(item.type)}
+                        onClick={() => {
+                            setHabitType(item.type);
+                            // Сброс полей при смене типа
+                            setCost('');
+                            setFrequency(Frequency.DAILY);
+                            setTimesPerDay('');
+                            setTimesPerWeek('');
+                        }}
                         className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all ${
                             habitType === item.type 
                             ? 'border-primary-500 bg-primary-50 text-primary-700' 
                             : 'border-gray-100 bg-gray-50 text-gray-500'
-                        } ${item.type === HabitType.OTHER ? 'col-span-2' : ''}`}
+                        }`}
                     >
                         <div className="mb-2 scale-125">{item.icon}</div>
                         <span className="font-medium text-center leading-tight">{item.label}</span>
@@ -173,56 +188,153 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Сколько вы тратите за раз (₽)</label>
-                        <input 
-                            type="number" 
-                            value={cost}
-                            onChange={(e) => setCost(e.target.value)}
-                            className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                            placeholder="0"
-                        />
-                    </div>
+                    {/* УМНЫЕ ВОПРОСЫ В ЗАВИСИМОСТИ ОТ ПРИВЫЧКИ */}
+                    {habitType === HabitType.SMOKING && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Сколько пачек в день?</label>
+                                <input 
+                                    type="number" 
+                                    min="0"
+                                    step="0.5"
+                                    onKeyDown={preventInvalidInput}
+                                    value={timesPerDay}
+                                    onChange={(e) => {
+                                        setTimesPerDay(e.target.value);
+                                        setFrequency(Frequency.MULTIPLE_DAILY);
+                                    }}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="1"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">💡 Средняя пачка: 200-300₽</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Цена одной пачки (₽)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={cost}
+                                    onChange={(e) => setCost(e.target.value)}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="250"
+                                />
+                            </div>
+                        </>
+                    )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Как часто?</label>
-                        <select 
-                            value={frequency}
-                            onChange={(e) => setFrequency(e.target.value as Frequency)}
-                            className="w-full p-3 rounded-xl border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none"
-                        >
-                            <option value={Frequency.DAILY}>Раз в день</option>
-                            <option value={Frequency.MULTIPLE_DAILY}>Несколько раз в день</option>
-                            <option value={Frequency.MULTIPLE_WEEKLY}>Несколько раз в неделю</option>
-                            <option value={Frequency.WEEKLY}>Раз в неделю</option>
-                        </select>
-                    </div>
+                    {habitType === HabitType.COFFEE && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз покупаешь кофе в неделю?</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={timesPerWeek}
+                                    onChange={(e) => {
+                                        setTimesPerWeek(e.target.value);
+                                        setFrequency(Frequency.MULTIPLE_WEEKLY);
+                                    }}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="5"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Средняя цена кофе (₽)</label>
+                                <input 
+                                    type="number" 
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={cost}
+                                    onChange={(e) => setCost(e.target.value)}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="300"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">💡 Starbucks ~350₽, обычная кофейня ~200₽</p>
+                            </div>
+                        </>
+                    )}
 
-                    {frequency === Frequency.MULTIPLE_DAILY && (
+                    {habitType === HabitType.FAST_FOOD && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз ешь фастфуд в неделю?</label>
+                                <input 
+                                    type="number" 
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={timesPerWeek}
+                                    onChange={(e) => {
+                                        setTimesPerWeek(e.target.value);
+                                        setFrequency(Frequency.MULTIPLE_WEEKLY);
+                                    }}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="3"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Средний чек (₽)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={cost}
+                                    onChange={(e) => setCost(e.target.value)}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="500"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">💡 McDonald's, KFC, Burger King</p>
+                            </div>
+                        </>
+                    )}
+
+                    {(habitType === HabitType.ALCOHOL || habitType === HabitType.ENERGY_DRINKS) && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз в неделю?</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={timesPerWeek}
+                                    onChange={(e) => {
+                                        setTimesPerWeek(e.target.value);
+                                        setFrequency(Frequency.MULTIPLE_WEEKLY);
+                                    }}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder="2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Сколько вы тратите за раз (₽)</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
+                                    value={cost}
+                                    onChange={(e) => setCost(e.target.value)}
+                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    placeholder={habitType === HabitType.ALCOHOL ? "800" : "150"}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {habitType === HabitType.OTHER && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз в день?</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Сколько ты тратишь в день? (₽)</label>
                             <input 
                                 type="number" 
                                 min="0"
-                                value={timesPerDay}
-                                onChange={(e) => setTimesPerDay(e.target.value)}
+                                onKeyDown={preventInvalidInput}
+                                value={cost}
+                                onChange={(e) => {
+                                    setCost(e.target.value);
+                                    setFrequency(Frequency.DAILY);
+                                }}
                                 className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
-                                placeholder="5"
-                            />
-                        </div>
-                    )}
-
-                    {frequency === Frequency.MULTIPLE_WEEKLY && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Сколько раз в неделю?</label>
-                            <input 
-                                type="number" 
-                                min="1"
-                                max="7"
-                                value={timesPerWeek}
-                                onChange={(e) => setTimesPerWeek(e.target.value)}
-                                className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
-                                placeholder="3"
+                                placeholder="200"
                             />
                         </div>
                     )}
@@ -306,7 +418,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <div className="animate-in fade-in">
                     <button onClick={() => setIsCustomGoal(false)} className="text-primary-600 font-medium mb-4 flex items-center"><ArrowLeft size={16} className="mr-1"/> Выбрать из списка</button>
                     
-                    {/* Fixed Image Upload Preview */}
                     <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-2 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                         {goalImage ? (
@@ -317,7 +428,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 <span className="text-sm">Нажми, чтобы загрузить фото</span>
                             </>
                         )}
-                        {/* Overlay hint if image exists */}
                         {goalImage && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span className="text-white font-medium">Изменить фото</span>
@@ -341,6 +451,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Стоимость (₽)</label>
                             <input 
                                 type="number" 
+                                min="0"
+                                onKeyDown={preventInvalidInput}
                                 value={goalCost}
                                 onChange={(e) => setGoalCost(e.target.value)}
                                 className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"

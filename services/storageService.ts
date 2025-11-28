@@ -103,13 +103,13 @@ export const getTodayRecord = (records: DailyRecord[]): DailyRecord | undefined 
   return records.find(r => r.date === today);
 };
 
-// --- Mock Data Generators for Onboarding ---
+// --- Suggested Goals ---
 
 export const SUGGESTED_GOALS = [
   { 
-    name: 'iPhone 17 Pro', 
-    price: 150000, 
-    img: ASSETS.IPHONE
+    name: 'JBL PartyBox 110', 
+    price: 35000, 
+    img: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&fit=crop'
   },
   { 
     name: 'PlayStation 5', 
@@ -117,23 +117,28 @@ export const SUGGESTED_GOALS = [
     img: ASSETS.PS5
   },
   { 
-    name: 'Отпуск в Крыму', 
-    price: 100000, 
+    name: 'Электросамокат Kugoo', 
+    price: 74000, 
+    img: 'https://images.unsplash.com/photo-1559311043-09f919eb3d2d?w=400&fit=crop'
+  },
+  { 
+    name: 'Отпуск в Турцию', 
+    price: 80000, 
     img: ASSETS.CRIMEA
   },
   { 
-    name: 'Обучение/Курсы', 
-    price: 80000, 
-    img: ASSETS.EDUCATION
+    name: 'MacBook Air M4', 
+    price: 140000, 
+    img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&fit=crop'
   },
   { 
-    name: 'Шуба', 
+    name: 'Мебель для квартиры', 
     price: 150000, 
-    img: ASSETS.COAT
+    img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&fit=crop'
   },
   { 
-    name: 'Фотоаппарат', 
-    price: 200000, 
-    img: ASSETS.CAMERA
+    name: 'iPhone 17 Pro', 
+    price: 150000, 
+    img: ASSETS.IPHONE
   },
 ];
