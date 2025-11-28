@@ -126,7 +126,7 @@ export const SUGGESTED_GOALS = [
     img: 'https://images.unsplash.com/photo-1559311043-09f919eb3d2d?w=400&fit=crop'
   },
   { 
-    name: 'Отпуск в Турцию', 
+    name: 'Отпуск', 
     price: 80000, 
     img: ASSETS.CRIMEA
   },
@@ -141,11 +141,6 @@ export const SUGGESTED_GOALS = [
     img: ASSETS.COFFEE
   },
   { 
-    name: 'Шуба', 
-    price: 120000, 
-    img: ASSETS.COAT
-  },
-  { 
     name: 'Фотоаппарат', 
     price: 180000, 
     img: ASSETS.CAMERA
@@ -156,7 +151,7 @@ export const SUGGESTED_GOALS = [
     img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&fit=crop'
   },
   { 
-    name: 'Мебель для квартиры', 
+    name: 'Мебель', 
     price: 150000, 
     img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&fit=crop'
   },
