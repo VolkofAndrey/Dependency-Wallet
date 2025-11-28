@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppState } from '../types';
 import { calculateTotalSaved } from '../services/storageService';
@@ -8,7 +9,7 @@ interface HistoryProps {
 }
 
 const History: React.FC<HistoryProps> = ({ state }) => {
-  const { records, habit } = state;
+  const { records, habit, achievedGoals } = state;
   if (!habit) return null;
 
   const totalSaved = calculateTotalSaved(records);
@@ -101,7 +102,7 @@ const History: React.FC<HistoryProps> = ({ state }) => {
                 </div>
            </div>
 
-           {/* Chart - Reduced height to h-36 */}
+           {/* Chart */}
            <div className="bg-white p-4 rounded-3xl shadow-sm">
                <h3 className="font-bold text-gray-800 mb-2 text-sm">Рост накоплений</h3>
                <div className="h-36 w-full">
@@ -120,7 +121,30 @@ const History: React.FC<HistoryProps> = ({ state }) => {
                </div>
            </div>
 
-           {/* Calendar - Compact view */}
+           {/* Achieved Goals Section */}
+           <div className="bg-white rounded-3xl p-4 shadow-sm">
+               <h3 className="font-bold text-gray-800 mb-3 text-sm">🏆 Достигнутые цели</h3>
+               {achievedGoals.length === 0 ? (
+                   <p className="text-gray-400 text-xs text-center py-2">Пока нет достигнутых целей. Продолжай копить!</p>
+               ) : (
+                   <div className="space-y-2">
+                       {achievedGoals.map(ag => (
+                           <div key={ag.id} className="flex items-center space-x-3 p-3 bg-primary-50 rounded-2xl">
+                               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center p-1">
+                                   <img src={ag.imagePath} className="w-full h-full object-contain" alt={ag.name} />
+                               </div>
+                               <div className="flex-1 min-w-0">
+                                   <p className="font-bold text-sm text-gray-900 truncate">{ag.name}</p>
+                                   <p className="text-xs text-gray-500">{Math.round(ag.amountSaved)}₽ за {ag.daysToAchieve} дн.</p>
+                               </div>
+                               <span className="text-xl">✅</span>
+                           </div>
+                       ))}
+                   </div>
+               )}
+           </div>
+
+           {/* Calendar */}
            <div className="bg-white p-4 rounded-3xl shadow-sm">
                <div className="flex justify-between items-center mb-2">
                    <h3 className="font-bold text-gray-800 text-sm">Этот месяц</h3>

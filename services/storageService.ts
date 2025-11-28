@@ -8,7 +8,10 @@ const getInitialState = (): AppState => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Migration: ensure achievedGoals exists
+      if (!parsed.achievedGoals) parsed.achievedGoals = [];
+      return parsed;
     }
   } catch (e) {
     console.error("Failed to parse storage, resetting to default", e);
@@ -16,6 +19,7 @@ const getInitialState = (): AppState => {
   return {
     habit: null,
     goal: null,
+    achievedGoals: [],
     records: [],
     settings: DEFAULT_SETTINGS
   };
@@ -125,6 +129,26 @@ export const SUGGESTED_GOALS = [
     name: 'Отпуск в Турцию', 
     price: 80000, 
     img: ASSETS.CRIMEA
+  },
+  { 
+    name: 'Обучение (Курсы)', 
+    price: 50000, 
+    img: ASSETS.EDUCATION
+  },
+  { 
+    name: 'Кофемашина', 
+    price: 45000, 
+    img: ASSETS.COFFEE
+  },
+  { 
+    name: 'Шуба', 
+    price: 120000, 
+    img: ASSETS.COAT
+  },
+  { 
+    name: 'Фотоаппарат', 
+    price: 180000, 
+    img: ASSETS.CAMERA
   },
   { 
     name: 'MacBook Air M4', 

@@ -3,6 +3,7 @@
 const SUCCESS_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'; // Positive Chime
 const FAIL_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2841/2841-preview.mp3'; // Cartoon Spring Boing
 const ACHIEVEMENT_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'; // Celebration Fanfare
+const VICTORY_SOUND = 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'; // Victory Success
 
 const audioCache: Record<string, HTMLAudioElement> = {};
 
@@ -20,13 +21,15 @@ const preloadAudio = (url: string) => {
 preloadAudio(SUCCESS_SOUND);
 preloadAudio(FAIL_SOUND);
 preloadAudio(ACHIEVEMENT_SOUND);
+preloadAudio(VICTORY_SOUND);
 
-export const playSound = (type: 'success' | 'fail' | 'achievement') => {
+export const playSound = (type: 'success' | 'fail' | 'achievement' | 'victory') => {
     let url = '';
     switch (type) {
         case 'success': url = SUCCESS_SOUND; break;
         case 'fail': url = FAIL_SOUND; break;
         case 'achievement': url = ACHIEVEMENT_SOUND; break;
+        case 'victory': url = VICTORY_SOUND; break;
     }
 
     if (url) {

@@ -34,6 +34,12 @@ export interface Goal {
   createdAt: number;
 }
 
+export interface AchievedGoal extends Goal {
+  achievedAt: number;
+  daysToAchieve: number;
+  amountSaved: number;
+}
+
 export interface DailyRecord {
   id: string;
   date: string; // YYYY-MM-DD
@@ -53,6 +59,7 @@ export interface AppSettings {
 export interface AppState {
   habit: Habit | null;
   goal: Goal | null;
+  achievedGoals: AchievedGoal[];
   records: DailyRecord[];
   settings: AppSettings;
 }

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { AppState, Habit, Goal, DailyRecord, DEFAULT_SETTINGS } from './types';
+import { AppState, Habit, Goal, DailyRecord, DEFAULT_SETTINGS, AchievedGoal } from './types';
 import { loadState, saveState, calculateDailySavings } from './services/storageService';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -19,6 +20,9 @@ const App: React.FC = () => {
         loaded.settings = { ...DEFAULT_SETTINGS, ...loaded.settings };
         if (!loaded.settings.dailyReminderTime) {
             loaded.settings.dailyReminderTime = '18:00';
+        }
+        if (!loaded.achievedGoals) {
+            loaded.achievedGoals = [];
         }
     }
     setState(loaded);
@@ -89,6 +93,16 @@ const App: React.FC = () => {
     });
   };
 
+  const handleArchiveGoal = (achievedGoal: AchievedGoal) => {
+    if (!state) return;
+    setState({
+        ...state,
+        achievedGoals: [...state.achievedGoals, achievedGoal],
+        goal: null, // Reset current goal
+        records: [] // Reset records to start fresh for new goal
+    });
+  };
+
   const handleUpdateHabit = (updatedHabit: Habit | null) => {
     if (!state) return;
     setState({ ...state, habit: updatedHabit });
@@ -115,6 +129,7 @@ const App: React.FC = () => {
     setState({
         habit: null,
         goal: null,
+        achievedGoals: [],
         records: [],
         settings: DEFAULT_SETTINGS
     });
@@ -139,6 +154,8 @@ const App: React.FC = () => {
                             <Dashboard 
                                 state={state} 
                                 onCheckIn={handleCheckIn} 
+                                onArchiveGoal={handleArchiveGoal}
+                                onUpdateGoal={handleUpdateGoal}
                             />
                         )}
                         {currentTab === 'history' && (
