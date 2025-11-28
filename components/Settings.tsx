@@ -1,45 +1,94 @@
+
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail, Upload } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail, Upload, Plus, Cigarette, Coffee, Wine, Zap, Sandwich } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
+import { calculateDailySavings } from '../services/storageService';
 
 interface SettingsProps {
   state: AppState;
   onReset: () => void;
-  onUpdateHabit: (habit: Habit) => void;
+  onUpdateHabit: (habit: Habit | null) => void;
   onUpdateGoal: (goal: Goal) => void;
   onUpdateSettings: (key: string, value: any) => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUpdateGoal, onUpdateSettings }) => {
   const { habit, goal, settings } = state;
-  const [editingHabit, setEditingHabit] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDeleteHabitConfirm, setShowDeleteHabitConfirm] = useState(false); // New state for delete confirmation
   const [showAbout, setShowAbout] = useState(false);
 
-  // Edit Habit State
-  const [habitCost, setHabitCost] = useState(habit?.costPerOccurrence.toString() || '');
-  const [habitFreq, setHabitFreq] = useState<Frequency>(habit?.frequency || Frequency.DAILY);
-  const [habitTimesPerDay, setHabitTimesPerDay] = useState(habit?.timesPerDay?.toString() || '');
-  const [habitTimesPerWeek, setHabitTimesPerWeek] = useState(habit?.timesPerWeek?.toString() || '');
+  // Add Habit State (similar to Onboarding)
+  const [isAddingHabit, setIsAddingHabit] = useState(false);
+  const [newHabitType, setNewHabitType] = useState<HabitType | null>(null);
+  const [newCost, setNewCost] = useState('');
+  const [newFreq, setNewFreq] = useState<Frequency>(Frequency.DAILY);
+  const [newTimesPerDay, setNewTimesPerDay] = useState('');
+  const [newTimesPerWeek, setNewTimesPerWeek] = useState('');
+  const [newCustomName, setNewCustomName] = useState('');
 
   // Edit Goal State
   const [goalName, setGoalName] = useState(goal?.name || '');
   const [goalTarget, setGoalTarget] = useState(goal?.targetAmount.toString() || '');
   const [goalImage, setGoalImage] = useState(goal?.imagePath || '');
 
-  const saveHabit = () => {
-    if (habit) {
-      onUpdateHabit({
-        ...habit,
-        costPerOccurrence: parseFloat(habitCost) || 0,
-        frequency: habitFreq,
-        timesPerDay: habitFreq === Frequency.MULTIPLE_DAILY ? (parseInt(habitTimesPerDay) || 1) : undefined,
-        timesPerWeek: habitFreq === Frequency.MULTIPLE_WEEKLY ? (parseInt(habitTimesPerWeek) || 1) : undefined
-      });
-      setEditingHabit(false);
+  // Validation helper
+  const preventInvalidInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
     }
+  };
+
+  const handleDeleteHabitClick = () => {
+      setShowDeleteHabitConfirm(true);
+  };
+
+  const confirmDeleteHabit = () => {
+      onUpdateHabit(null);
+      // Reset add habit form
+      setIsAddingHabit(false);
+      setNewHabitType(null);
+      setNewCost('');
+      setNewTimesPerDay('');
+      setNewTimesPerWeek('');
+      setShowDeleteHabitConfirm(false);
+  };
+
+  const getDailyCostForPreview = () => {
+    const costNum = parseFloat(newCost) || 0;
+    const timesD = parseInt(newTimesPerDay) || 1;
+    const timesW = parseInt(newTimesPerWeek) || 1;
+    
+    const h: Habit = {
+      id: 'temp', 
+      type: newHabitType || HabitType.OTHER, 
+      costPerOccurrence: costNum, 
+      frequency: newFreq, 
+      timesPerDay: timesD, 
+      timesPerWeek: timesW,
+      createdAt: 0
+    };
+    return calculateDailySavings(h);
+  };
+
+  const handleSaveNewHabit = () => {
+    if (!newHabitType || !newCost) return;
+
+    const newHabit: Habit = {
+      id: Date.now().toString(),
+      type: newHabitType,
+      customName: newHabitType === HabitType.OTHER ? newCustomName : undefined,
+      costPerOccurrence: parseFloat(newCost),
+      frequency: newFreq,
+      timesPerDay: newFreq === Frequency.MULTIPLE_DAILY ? parseInt(newTimesPerDay) : undefined,
+      timesPerWeek: newFreq === Frequency.MULTIPLE_WEEKLY ? parseInt(newTimesPerWeek) : undefined,
+      createdAt: Date.now(),
+    };
+
+    onUpdateHabit(newHabit);
+    setIsAddingHabit(false);
   };
 
   const handleGoalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,73 +177,213 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
             {/* Habit Section */}
             <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 ml-2">Какую привычку бросаю</h3>
-                <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                    {!editingHabit ? (
+                
+                {habit ? (
+                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                         <div className="p-4 flex items-center justify-between border-b border-gray-100">
                             <div>
-                                <p className="font-bold text-gray-800">{habit ? getHabitLabel(habit) : ''}</p>
-                                <p className="text-sm text-gray-500">{habit?.costPerOccurrence}₽ / {habit ? getFrequencyLabel(habit) : ''}</p>
+                                <p className="font-bold text-gray-800">{getHabitLabel(habit)}</p>
+                                <p className="text-sm text-gray-500">{habit.costPerOccurrence}₽ / {getFrequencyLabel(habit)}</p>
                             </div>
-                            <button onClick={() => setEditingHabit(true)} className="p-2 bg-gray-50 rounded-full text-primary-600"><Edit2 size={16}/></button>
+                            <button onClick={handleDeleteHabitClick} className="p-3 bg-red-50 rounded-full text-error hover:bg-red-100 transition-colors">
+                                <Trash2 size={18}/>
+                            </button>
                         </div>
-                    ) : (
-                        <div className="p-4 space-y-4">
-                            <div>
-                                <label className="text-xs text-gray-400">Стоимость (₽)</label>
-                                <input 
-                                    type="number" 
-                                    value={habitCost} 
-                                    onChange={e => setHabitCost(e.target.value)} 
-                                    className="w-full p-2 border rounded-lg"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-400">Частота</label>
-                                <select 
-                                    value={habitFreq} 
-                                    onChange={e => setHabitFreq(e.target.value as Frequency)}
-                                    className="w-full p-2 border rounded-lg bg-white text-gray-900"
-                                >
-                                    <option value={Frequency.DAILY}>Раз в день</option>
-                                    <option value={Frequency.MULTIPLE_DAILY}>Несколько раз в день</option>
-                                    <option value={Frequency.MULTIPLE_WEEKLY}>Несколько раз в неделю</option>
-                                    <option value={Frequency.WEEKLY}>Раз в неделю</option>
-                                </select>
-                            </div>
-                            {habitFreq === Frequency.MULTIPLE_DAILY && (
-                                <div>
-                                    <label className="text-xs text-gray-400">Сколько раз в день?</label>
-                                    <input 
-                                        type="number" 
-                                        min="0"
-                                        placeholder="5"
-                                        value={habitTimesPerDay} 
-                                        onChange={e => setHabitTimesPerDay(e.target.value)} 
-                                        className="w-full p-2 border rounded-lg"
-                                    />
+                    </div>
+                ) : (
+                    <>
+                        {!isAddingHabit ? (
+                            <button 
+                                onClick={() => setIsAddingHabit(true)}
+                                className="w-full py-4 bg-primary-600 rounded-2xl text-white font-bold text-lg shadow-lg shadow-primary-500/30 active:scale-95 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <Plus size={24} />
+                                <span>Добавить привычку</span>
+                            </button>
+                        ) : (
+                            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-bold text-gray-800">Создание привычки</h4>
+                                    <button onClick={() => setIsAddingHabit(false)} className="text-gray-400"><X size={20}/></button>
                                 </div>
-                            )}
-                            {habitFreq === Frequency.MULTIPLE_WEEKLY && (
-                                <div>
-                                    <label className="text-xs text-gray-400">Сколько раз в неделю?</label>
-                                    <input 
-                                        type="number" 
-                                        min="1"
-                                        max="7"
-                                        placeholder="3"
-                                        value={habitTimesPerWeek} 
-                                        onChange={e => setHabitTimesPerWeek(e.target.value)} 
-                                        className="w-full p-2 border rounded-lg"
-                                    />
+                                
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { type: HabitType.SMOKING, label: 'Курение', icon: <Cigarette size={20}/> },
+                                        { type: HabitType.COFFEE, label: 'Кофе', icon: <Coffee size={20}/> },
+                                        { type: HabitType.ALCOHOL, label: 'Алкоголь', icon: <Wine size={20}/> },
+                                        { type: HabitType.ENERGY_DRINKS, label: 'Энергетики', icon: <Zap size={20}/> },
+                                        { type: HabitType.FAST_FOOD, label: 'Фастфуд', icon: <Sandwich size={20}/> },
+                                        { type: HabitType.OTHER, label: 'Другое', icon: <Plus size={20}/> },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.type}
+                                            onClick={() => {
+                                                setNewHabitType(item.type);
+                                                setNewCost('');
+                                                setNewFreq(Frequency.DAILY);
+                                                setNewTimesPerDay('');
+                                                setNewTimesPerWeek('');
+                                            }}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all text-xs font-medium ${
+                                                newHabitType === item.type 
+                                                ? 'border-primary-500 bg-primary-50 text-primary-700' 
+                                                : 'border-gray-100 bg-gray-50 text-gray-500'
+                                            }`}
+                                        >
+                                            <div className="mb-1">{item.icon}</div>
+                                            <span>{item.label}</span>
+                                        </button>
+                                    ))}
                                 </div>
-                            )}
-                            <div className="flex space-x-2">
-                                <button onClick={saveHabit} className="flex-1 bg-primary-500 text-white py-2 rounded-lg text-sm font-bold">Сохранить</button>
-                                <button onClick={() => setEditingHabit(false)} className="px-4 bg-gray-100 text-gray-500 rounded-lg text-sm">Отмена</button>
+
+                                {newHabitType && (
+                                    <div className="space-y-3 pt-2">
+                                        {newHabitType === HabitType.OTHER && (
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500">Название</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={newCustomName}
+                                                    onChange={(e) => setNewCustomName(e.target.value)}
+                                                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                    placeholder="Например: Сладости"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {newHabitType === HabitType.SMOKING && (
+                                            <>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Пачек в день</label>
+                                                    <input 
+                                                        type="number" step="0.5" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newTimesPerDay}
+                                                        onChange={(e) => { setNewTimesPerDay(e.target.value); setNewFreq(Frequency.MULTIPLE_DAILY); }}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="1"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Цена пачки (₽)</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newCost}
+                                                        onChange={(e) => setNewCost(e.target.value)}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="250"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {newHabitType === HabitType.COFFEE && (
+                                            <>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Кофе в неделю</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newTimesPerWeek}
+                                                        onChange={(e) => { setNewTimesPerWeek(e.target.value); setNewFreq(Frequency.MULTIPLE_WEEKLY); }}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Цена кофе (₽)</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newCost}
+                                                        onChange={(e) => setNewCost(e.target.value)}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="300"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {newHabitType === HabitType.FAST_FOOD && (
+                                            <>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Фастфуд в неделю</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newTimesPerWeek}
+                                                        onChange={(e) => { setNewTimesPerWeek(e.target.value); setNewFreq(Frequency.MULTIPLE_WEEKLY); }}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="3"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Средний чек (₽)</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newCost}
+                                                        onChange={(e) => setNewCost(e.target.value)}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="500"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {(newHabitType === HabitType.ALCOHOL || newHabitType === HabitType.ENERGY_DRINKS) && (
+                                            <>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Сколько раз в неделю?</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newTimesPerWeek}
+                                                        onChange={(e) => { setNewTimesPerWeek(e.target.value); setNewFreq(Frequency.MULTIPLE_WEEKLY); }}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="2"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500">Сумма за раз (₽)</label>
+                                                    <input 
+                                                        type="number" min="0" onKeyDown={preventInvalidInput}
+                                                        value={newCost}
+                                                        onChange={(e) => setNewCost(e.target.value)}
+                                                        className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                        placeholder="500"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {newHabitType === HabitType.OTHER && (
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500">Траты в день (₽)</label>
+                                                <input 
+                                                    type="number" min="0" onKeyDown={preventInvalidInput}
+                                                    value={newCost}
+                                                    onChange={(e) => { setNewCost(e.target.value); setNewFreq(Frequency.DAILY); }}
+                                                    className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-primary-500"
+                                                    placeholder="200"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <div className="p-3 bg-primary-50 rounded-xl">
+                                            <p className="text-center text-primary-800 text-sm">
+                                                ~ <span className="font-bold">{(getDailyCostForPreview() * 30).toFixed(0)}₽</span> в месяц
+                                            </p>
+                                        </div>
+
+                                        <button 
+                                            onClick={handleSaveNewHabit}
+                                            disabled={!newCost}
+                                            className="w-full py-3 bg-primary-600 disabled:opacity-50 text-white rounded-xl font-bold shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
+                                        >
+                                            Сохранить привычку
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </>
+                )}
             </section>
 
              {/* Goal Section */}
@@ -247,6 +436,8 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                                 <label className="text-xs text-gray-400">Цена цели (₽)</label>
                                 <input 
                                     type="number" 
+                                    min="0"
+                                    onKeyDown={preventInvalidInput}
                                     value={goalTarget} 
                                     onChange={e => setGoalTarget(e.target.value)} 
                                     className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
@@ -370,6 +561,25 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowResetConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
                             <button onClick={onReset} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Сбросить</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Habit Confirmation Modal */}
+            {showDeleteHabitConfirm && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-center mb-4 text-error">
+                            <AlertCircle size={48} />
+                        </div>
+                        <h3 className="text-center text-xl font-bold text-gray-900 mb-2">Удалить привычку?</h3>
+                        <p className="text-center text-gray-500 mb-6">
+                            Ты уверен, что хочешь удалить текущую привычку? Статистика по ней может быть потеряна.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setShowDeleteHabitConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
+                            <button onClick={confirmDeleteHabit} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Удалить</button>
                         </div>
                     </div>
                 </div>

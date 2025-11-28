@@ -89,7 +89,7 @@ const App: React.FC = () => {
     });
   };
 
-  const handleUpdateHabit = (updatedHabit: Habit) => {
+  const handleUpdateHabit = (updatedHabit: Habit | null) => {
     if (!state) return;
     setState({ ...state, habit: updatedHabit });
   };
