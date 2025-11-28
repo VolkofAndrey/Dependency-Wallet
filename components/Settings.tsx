@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail, Upload } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
 
 interface SettingsProps {
@@ -216,22 +216,31 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         </div>
                     ) : (
                          <div className="p-4 space-y-4">
-                            <div className="flex items-center space-x-4">
-                                <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0">
-                                     <img src={goalImage} className="w-full h-full rounded-lg object-contain" />
-                                </div>
-                                <label className="flex-1 p-2 border border-dashed rounded-lg text-center text-sm text-gray-500 cursor-pointer">
-                                    Сменить фото
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleGoalImageUpload} />
-                                </label>
-                            </div>
+                            
+                            <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-2 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
+                                <input type="file" accept="image/*" onChange={handleGoalImageUpload} className="hidden" />
+                                {goalImage ? (
+                                     <img src={goalImage} className="w-full h-full object-contain p-2" alt="Preview" />
+                                ) : (
+                                    <>
+                                        <Upload size={32} className="mb-2"/>
+                                        <span className="text-sm">Нажми, чтобы загрузить фото</span>
+                                    </>
+                                )}
+                                {goalImage && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-white font-medium">Изменить фото</span>
+                                    </div>
+                                )}
+                            </label>
+
                             <div>
                                 <label className="text-xs text-gray-400">Название</label>
                                 <input 
                                     type="text" 
                                     value={goalName} 
                                     onChange={e => setGoalName(e.target.value)} 
-                                    className="w-full p-2 border rounded-lg"
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                                 />
                             </div>
                             <div>
@@ -240,12 +249,12 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                                     type="number" 
                                     value={goalTarget} 
                                     onChange={e => setGoalTarget(e.target.value)} 
-                                    className="w-full p-2 border rounded-lg"
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                                 />
                             </div>
-                            <div className="flex space-x-2">
-                                <button onClick={saveGoal} className="flex-1 bg-primary-500 text-white py-2 rounded-lg text-sm font-bold">Сохранить</button>
-                                <button onClick={() => setEditingGoal(false)} className="px-4 bg-gray-100 text-gray-500 rounded-lg text-sm">Отмена</button>
+                            <div className="flex space-x-2 pt-2">
+                                <button onClick={saveGoal} className="flex-1 bg-primary-500 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20">Сохранить</button>
+                                <button onClick={() => setEditingGoal(false)} className="px-6 bg-gray-100 text-gray-500 rounded-xl text-sm font-bold">Отмена</button>
                             </div>
                         </div>
                     )}
@@ -347,8 +356,6 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                 </div>
             </section>
             
-            <p className="text-center text-xs text-gray-400 mt-4">Версия 1.0.4</p>
-
             {/* Reset Confirmation Modal */}
             {showResetConfirm && (
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">

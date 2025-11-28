@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { AppState } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { AppState, DailyRecord } from '../types';
 import { calculateDailySavings, calculateDaysRemaining, calculateTotalSaved, calculateStreak, getTodayRecord } from '../services/storageService';
 import { getUnlockedAchievements, getNextAchievement, getAchievementsForHabit, calculateCurrentStreak, Achievement } from '../services/achievementService';
 import { playSound } from '../services/soundService';
@@ -28,12 +28,44 @@ const SUCCESS_PHRASES = [
   "Такой прогресс вдохновляет!"
 ];
 
+interface AchievementCardProps {
+    ach: Achievement;
+    unlockedAchievements: Achievement[];
+}
+
+const AchievementCard: React.FC<AchievementCardProps> = ({ ach, unlockedAchievements }) => {
+    const isUnlocked = unlockedAchievements.some(u => u.id === ach.id);
+    
+    return (
+      <div 
+          className={`relative p-2 rounded-xl border flex flex-col items-center justify-center h-24 shadow-sm transition-all ${
+              isUnlocked 
+              ? 'bg-gradient-to-br from-primary-50 to-white border-primary-200' 
+              : 'bg-gray-50 border-gray-100 opacity-80'
+          }`}
+      >
+          <span className={`text-2xl mb-1 ${isUnlocked ? '' : 'grayscale opacity-50'}`}>{ach.icon}</span>
+          <span className={`text-[9px] text-center font-bold leading-tight line-clamp-2 ${isUnlocked ? 'text-gray-800' : 'text-gray-400'}`}>
+              {ach.title}
+          </span>
+          <span className="text-[8px] text-gray-400 mt-1">{ach.target} дн.</span>
+          
+          {!isUnlocked && (
+              <div className="absolute top-1 right-1 text-gray-300">
+                  <Lock size={10} />
+              </div>
+          )}
+      </div>
+    );
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const { habit, goal, records } = state;
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number }>({ d: 0, h: 0, m: 0 });
   const [showRelapseConfirm, setShowRelapseConfirm] = useState(false);
   const [justCheckedIn, setJustCheckedIn] = useState(false);
-  const [showNewAchievement, setShowNewAchievement] = useState<string | null>(null);
+  const [showNewAchievement, setShowNewAchievement] = useState<Achievement | null>(null);
+  const prevUnlockedCount = useRef(0);
 
   if (!habit || !goal) return null;
 
@@ -50,16 +82,13 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   const allAchievements = getAchievementsForHabit(habit.type);
   const nextAchievement = getNextAchievement(habit.type, records);
   
+  // Initialize ref
+  useEffect(() => {
+      prevUnlockedCount.current = unlockedAchievements.length;
+  }, []);
+
   const commonAchievements = allAchievements.filter(a => a.category === 'common');
   const specificAchievements = allAchievements.filter(a => a.category === 'specific');
-
-  // Расчет прогресса для следующей ачивки
-  const getProgressValue = (ach: Achievement) => {
-      if (ach.id === 'week_streak') {
-          return calculateCurrentStreak(records);
-      }
-      return records.filter(r => r.isSuccessful).length;
-  };
 
   useEffect(() => {
     const updateTimer = () => {
@@ -88,43 +117,35 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
   }, [daysToGoal]);
 
   const handleSuccess = () => {
-    const prevUnlocked = unlockedAchievements.length;
+    // Сохраняем текущее кол-во ачивок перед обновлением
+    prevUnlockedCount.current = unlockedAchievements.length;
     
-    // Haptic feedback for success (short, rhythmic)
-    if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    
-    playSound('success');
     onCheckIn(true);
     setJustCheckedIn(true);
-    
-    // Симуляция проверки новой ачивки
-    setTimeout(() => {
-      const newUnlocked = getUnlockedAchievements(habit.type, [...records, {
-        id: Date.now().toString(),
-        date: new Date().toISOString().split('T')[0],
-        isSuccessful: true,
-        amountSaved: dailySavings,
-        createdAt: Date.now()
-      }]);
-      
-      if (newUnlocked.length > prevUnlocked) {
-        playSound('achievement');
-        const newAch = newUnlocked[newUnlocked.length - 1];
-        setShowNewAchievement(`${newAch.icon} ${newAch.title}`);
-        setTimeout(() => setShowNewAchievement(null), 3000);
-      }
-    }, 500);
+    playSound('success');
+    if (navigator.vibrate) navigator.vibrate(50);
     
     setTimeout(() => setJustCheckedIn(false), 2000);
   };
 
+  // Effect to detect new achievement after render update
+  useEffect(() => {
+      if (unlockedAchievements.length > prevUnlockedCount.current) {
+          const newAch = unlockedAchievements[unlockedAchievements.length - 1];
+          setShowNewAchievement(newAch);
+          playSound('achievement');
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          
+          setTimeout(() => setShowNewAchievement(null), 5000); // 5 секунд показа
+      }
+      prevUnlockedCount.current = unlockedAchievements.length;
+  }, [unlockedAchievements.length]);
+
   const handleRelapse = () => {
-    // Haptic feedback for failure (long, heavy)
-    if (navigator.vibrate) navigator.vibrate(300);
-    
-    playSound('fail');
     onCheckIn(false);
     setShowRelapseConfirm(false);
+    playSound('fail');
+    if (navigator.vibrate) navigator.vibrate(500);
   };
 
   const formatMoney = (amount: number) => {
@@ -136,30 +157,11 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
     return SUCCESS_PHRASES[sum % SUCCESS_PHRASES.length];
   };
 
-  const renderAchievementCard = (achievement: Achievement) => {
-      const isUnlocked = unlockedAchievements.some(u => u.id === achievement.id);
-      
-      return (
-        <div 
-            key={achievement.id}
-            className={`p-3 rounded-xl flex flex-col items-center justify-center border shadow-sm transition-all relative ${
-                isUnlocked 
-                ? 'bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200' 
-                : 'bg-gray-50 border-gray-100'
-            }`}
-        >
-            {!isUnlocked && <Lock size={12} className="text-gray-300 absolute top-2 right-2" />}
-            <span className={`text-3xl mb-1 ${!isUnlocked ? 'grayscale opacity-40' : ''}`}>
-                {achievement.icon}
-            </span>
-            <span className={`text-[10px] text-center font-semibold leading-tight ${isUnlocked ? 'text-primary-700' : 'text-gray-400'}`}>
-                {achievement.title}
-            </span>
-            {!isUnlocked && (
-                 <span className="text-[9px] text-gray-300 mt-0.5 font-medium">{achievement.target} дн.</span>
-            )}
-        </div>
-      );
+  const getAchievementProgress = (ach: Achievement) => {
+      if (ach.id === 'week_streak') {
+          return calculateCurrentStreak(records);
+      }
+      return records.filter(r => r.isSuccessful).length;
   };
 
   return (
@@ -174,28 +176,31 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24 px-4 pt-2">
         
         {/* Main Goal Card */}
-        <div className="relative w-full aspect-square rounded-[32px] overflow-hidden shadow-xl mb-4 group bg-white border border-gray-100">
-            <img src={goal.imagePath} alt="Goal" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" />
+        <div className="relative w-full aspect-square rounded-[32px] overflow-hidden shadow-sm mb-4 group bg-white border border-gray-100">
+            <div className="absolute inset-0 p-8 flex items-center justify-center">
+                 <img src={goal.imagePath} alt="Goal" className="w-full h-full object-contain" />
+            </div>
             
-            {/* Timer Overlay with Background */}
-            <div className="absolute top-0 w-full p-6 flex justify-center pointer-events-none">
-                <div className="bg-white/95 backdrop-blur-sm px-6 py-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                    <p className="text-gray-500 font-medium mb-1 text-sm">До {goal.name} осталось</p>
-                    <div className="text-gray-900 font-bold text-3xl tracking-tight">
-                        {timeLeft.d}<span className="text-lg font-normal opacity-70">д</span> : {timeLeft.h}<span className="text-lg font-normal opacity-70">ч</span> : {timeLeft.m}<span className="text-lg font-normal opacity-70">м</span>
+            {/* Timer Card Overlay */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 w-auto max-w-[90%]">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-sm border border-white/50 text-center">
+                    <p className="text-gray-500 text-xs font-medium mb-1 uppercase tracking-wide">До {goal.name} осталось</p>
+                    <div className="text-gray-900 font-bold text-3xl tracking-tight whitespace-nowrap">
+                        {timeLeft.d}<span className="text-sm font-normal text-gray-500 ml-0.5 mr-2">д</span>
+                        {timeLeft.h}<span className="text-sm font-normal text-gray-500 ml-0.5 mr-2">ч</span>
+                        {timeLeft.m}<span className="text-sm font-normal text-gray-500 ml-0.5">м</span>
                     </div>
                 </div>
             </div>
 
-            <div className="absolute bottom-0 w-full p-6">
-                <div className="flex justify-between items-end mb-2 text-gray-900">
-                    <span className="font-bold text-3xl">{progressPercent.toFixed(1)}%</span>
-                    <span className="text-sm opacity-80 mb-1">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
+            <div className="absolute bottom-0 w-full p-6 bg-white/80 backdrop-blur-md border-t border-gray-100">
+                <div className="flex justify-between items-end mb-2">
+                    <span className="font-bold text-3xl text-primary-600">{progressPercent.toFixed(1)}%</span>
+                    <span className="text-sm text-gray-500 mb-1 font-medium">{totalSaved.toFixed(0)}₽ / {goal.targetAmount.toLocaleString()}₽</span>
                 </div>
-                {/* Changed track color for visibility on white */}
-                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div 
-                        className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(76,175,80,0.4)]"
+                        className="h-full bg-primary-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(76,175,80,0.4)]"
                         style={{ width: `${progressPercent}%` }}
                     ></div>
                 </div>
@@ -242,53 +247,67 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
                 <span className="text-xl font-bold text-gray-800">{streak} <span className="text-xs font-normal text-gray-400">дней</span></span>
              </div>
              
-             {/* Достижения */}
+             {/* Total Unlocked */}
              <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
                  <p className="text-xs text-gray-500 mb-1">Достижения</p>
                  <div className="flex items-center space-x-1">
                     <span className="text-2xl font-bold text-primary-600">{unlockedAchievements.length}</span>
-                    <span className="text-xs text-gray-400">/ 5</span>
+                    <span className="text-xs text-gray-400">/ {allAchievements.length}</span>
                  </div>
              </div>
         </div>
 
         {/* Achievement Cards */}
-        <div className="mt-4 bg-white rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">🏆 Твои достижения</h3>
+        <div className="mt-4 bg-white rounded-3xl shadow-sm p-5 border border-gray-100">
+            <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                🏆 Твои достижения
+            </h3>
             
-            {/* Common Achievements - Row 1 */}
-            <div className="grid grid-cols-3 gap-2 mb-2">
-                {commonAchievements.map(renderAchievementCard)}
-            </div>
+            <div className="space-y-4">
+                {/* Common Achievements */}
+                <div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {commonAchievements.map(ach => (
+                            <AchievementCard 
+                                key={ach.id} 
+                                ach={ach} 
+                                unlockedAchievements={unlockedAchievements} 
+                            />
+                        ))}
+                    </div>
+                </div>
 
-            {/* Specific Achievements - Row 2 */}
-            <div className="grid grid-cols-2 gap-2">
-                 {specificAchievements.map(renderAchievementCard)}
+                {/* Specific Achievements */}
+                <div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {specificAchievements.map(ach => (
+                             <AchievementCard 
+                                key={ach.id} 
+                                ach={ach} 
+                                unlockedAchievements={unlockedAchievements} 
+                             />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Next Achievement Progress Bar */}
+                {nextAchievement && (
+                    <div className="pt-3 border-t border-gray-100 mt-2">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs text-gray-500">До «{nextAchievement.title}»</span>
+                            <span className="text-xs font-bold text-primary-600">
+                                {getAchievementProgress(nextAchievement)} / {nextAchievement.target}
+                            </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-primary-500 transition-all"
+                                style={{ width: `${Math.min(100, (getAchievementProgress(nextAchievement) / nextAchievement.target) * 100)}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
             </div>
-            
-            {/* Прогресс до следующей ачивки */}
-            {nextAchievement && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-gray-500">Следующая: {nextAchievement.title}</span>
-                        <span className="text-xs font-bold text-primary-600">
-                            {getProgressValue(nextAchievement)} / {nextAchievement.target}
-                        </span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-primary-500 transition-all"
-                            style={{ width: `${Math.min(100, (getProgressValue(nextAchievement) / nextAchievement.target) * 100)}%` }}
-                        ></div>
-                    </div>
-                </div>
-            )}
-             
-            {!nextAchievement && (
-                <div className="mt-3 pt-3 border-t border-gray-100 text-center">
-                     <p className="text-xs text-primary-600 font-bold">🎉 Все достижения разблокированы!</p>
-                </div>
-            )}
         </div>
 
       </div>
@@ -300,15 +319,16 @@ const Dashboard: React.FC<DashboardProps> = ({ state, onCheckIn }) => {
           </div>
       )}
 
-      {/* New Achievement Popup */}
+      {/* New Achievement Popup - Centered */}
       {showNewAchievement && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-4 rounded-2xl shadow-2xl animate-in zoom-in-95 slide-in-from-top-10 duration-500">
-              <div className="flex items-center space-x-3">
-                  <span className="text-4xl">🎉</span>
-                  <div>
-                      <p className="text-xs font-medium opacity-90">Новое достижение!</p>
-                      <p className="font-bold text-lg">{showNewAchievement}</p>
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xs px-4 pointer-events-none">
+              <div className="bg-white/90 backdrop-blur-md text-gray-900 p-6 rounded-3xl shadow-2xl border-4 border-yellow-400 animate-in zoom-in-95 duration-500 flex flex-col items-center text-center">
+                  <div className="text-6xl mb-4 animate-bounce">
+                      {showNewAchievement.icon}
                   </div>
+                  <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Новое достижение!</p>
+                  <h3 className="text-2xl font-black mb-2">{showNewAchievement.title}</h3>
+                  <p className="text-gray-500 text-sm">{showNewAchievement.description}</p>
               </div>
           </div>
       )}
