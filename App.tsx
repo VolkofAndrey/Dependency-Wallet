@@ -94,7 +94,7 @@ const App: React.FC = () => {
     setState({ ...state, habit: updatedHabit });
   };
 
-  const handleUpdateGoal = (updatedGoal: Goal) => {
+  const handleUpdateGoal = (updatedGoal: Goal | null) => {
     if (!state) return;
     setState({ ...state, goal: updatedGoal });
   };

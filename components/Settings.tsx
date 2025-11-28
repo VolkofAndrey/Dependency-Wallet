@@ -1,23 +1,21 @@
-
 import React, { useState } from 'react';
 import { AppState, Habit, Goal, HabitType, Frequency } from '../types';
-import { Trash2, Bell, Share2, Info, ChevronRight, Edit2, AlertCircle, X, Clock, Mail, Upload, Plus, Cigarette, Coffee, Wine, Zap, Sandwich } from 'lucide-react';
+import { Trash2, Bell, Share2, Info, ChevronRight, AlertCircle, X, Clock, Mail, Upload, Plus, Cigarette, Coffee, Wine, Zap, Sandwich, Check, ArrowLeft } from 'lucide-react';
 import { requestNotificationPermission, scheduleNotification } from '../services/notificationService';
-import { calculateDailySavings } from '../services/storageService';
+import { calculateDailySavings, SUGGESTED_GOALS } from '../services/storageService';
 
 interface SettingsProps {
   state: AppState;
   onReset: () => void;
   onUpdateHabit: (habit: Habit | null) => void;
-  onUpdateGoal: (goal: Goal) => void;
+  onUpdateGoal: (goal: Goal | null) => void;
   onUpdateSettings: (key: string, value: any) => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUpdateGoal, onUpdateSettings }) => {
   const { habit, goal, settings } = state;
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showDeleteHabitConfirm, setShowDeleteHabitConfirm] = useState(false); // New state for delete confirmation
+  const [showDeleteHabitConfirm, setShowDeleteHabitConfirm] = useState(false);
+  const [showDeleteGoalConfirm, setShowDeleteGoalConfirm] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
   // Add Habit State (similar to Onboarding)
@@ -29,10 +27,12 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
   const [newTimesPerWeek, setNewTimesPerWeek] = useState('');
   const [newCustomName, setNewCustomName] = useState('');
 
-  // Edit Goal State
-  const [goalName, setGoalName] = useState(goal?.name || '');
-  const [goalTarget, setGoalTarget] = useState(goal?.targetAmount.toString() || '');
-  const [goalImage, setGoalImage] = useState(goal?.imagePath || '');
+  // Add Goal State
+  const [isAddingGoal, setIsAddingGoal] = useState(false);
+  const [isCustomGoal, setIsCustomGoal] = useState(false);
+  const [goalName, setGoalName] = useState('');
+  const [goalTarget, setGoalTarget] = useState('');
+  const [goalImage, setGoalImage] = useState('');
 
   // Validation helper
   const preventInvalidInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -47,13 +47,26 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
 
   const confirmDeleteHabit = () => {
       onUpdateHabit(null);
-      // Reset add habit form
       setIsAddingHabit(false);
       setNewHabitType(null);
       setNewCost('');
       setNewTimesPerDay('');
       setNewTimesPerWeek('');
       setShowDeleteHabitConfirm(false);
+  };
+
+  const handleDeleteGoalClick = () => {
+      setShowDeleteGoalConfirm(true);
+  };
+
+  const confirmDeleteGoal = () => {
+      onUpdateGoal(null);
+      setIsAddingGoal(false);
+      setIsCustomGoal(false);
+      setGoalName('');
+      setGoalTarget('');
+      setGoalImage('');
+      setShowDeleteGoalConfirm(false);
   };
 
   const getDailyCostForPreview = () => {
@@ -104,16 +117,18 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
       reader.readAsDataURL(file);
   };
 
-  const saveGoal = () => {
-      if(goal) {
-          onUpdateGoal({
-              ...goal,
-              name: goalName,
-              targetAmount: parseFloat(goalTarget) || 0,
-              imagePath: goalImage
-          });
-          setEditingGoal(false);
-      }
+  const handleSaveNewGoal = () => {
+      if (!goalName || !goalTarget) return;
+
+      const newGoal: Goal = {
+          id: Date.now().toString(),
+          name: goalName,
+          targetAmount: parseFloat(goalTarget),
+          imagePath: goalImage,
+          createdAt: Date.now()
+      };
+      onUpdateGoal(newGoal);
+      setIsAddingGoal(false);
   };
 
   const handleToggleNotifications = async () => {
@@ -389,67 +404,144 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
              {/* Goal Section */}
              <section>
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 ml-2">Моя цель</h3>
-                <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                    {!editingGoal ? (
-                        <div className="p-4 flex items-center justify-between">
+                {goal ? (
+                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+                         <div className="p-4 flex items-center justify-between">
                             <div className="flex items-center space-x-3 w-full overflow-hidden">
                                 <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0">
-                                   <img src={goal?.imagePath} alt="Goal" className="w-full h-full rounded-lg object-contain" />
+                                   <img src={goal.imagePath} alt="Goal" className="w-full h-full rounded-lg object-contain" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="font-bold text-gray-800 truncate">{goal?.name}</p>
-                                    <p className="text-sm text-gray-500">{goal?.targetAmount.toLocaleString()}₽</p>
+                                    <p className="font-bold text-gray-800 truncate">{goal.name}</p>
+                                    <p className="text-sm text-gray-500">{goal.targetAmount.toLocaleString()}₽</p>
                                 </div>
                             </div>
-                            <button onClick={() => setEditingGoal(true)} className="p-2 bg-gray-50 rounded-full text-primary-600 shrink-0 ml-2"><Edit2 size={16}/></button>
+                            <button onClick={handleDeleteGoalClick} className="p-3 bg-red-50 rounded-full text-error shrink-0 ml-2"><Trash2 size={18}/></button>
                         </div>
-                    ) : (
-                         <div className="p-4 space-y-4">
-                            
-                            <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-2 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
-                                <input type="file" accept="image/*" onChange={handleGoalImageUpload} className="hidden" />
-                                {goalImage ? (
-                                     <img src={goalImage} className="w-full h-full object-contain p-2" alt="Preview" />
-                                ) : (
+                    </div>
+                ) : (
+                    <>
+                        {!isAddingGoal ? (
+                            <button 
+                                onClick={() => {
+                                    setIsAddingGoal(true);
+                                    setIsCustomGoal(false);
+                                    setGoalName('');
+                                    setGoalTarget('');
+                                    setGoalImage('');
+                                }}
+                                className="w-full py-4 bg-primary-600 rounded-2xl text-white font-bold text-lg shadow-lg shadow-primary-500/30 active:scale-95 transition-all flex items-center justify-center space-x-2"
+                            >
+                                <Plus size={24} />
+                                <span>Добавить цель</span>
+                            </button>
+                        ) : (
+                            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4 animate-in fade-in">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-bold text-gray-800">Выбор цели</h4>
+                                    <button onClick={() => setIsAddingGoal(false)} className="text-gray-400"><X size={20}/></button>
+                                </div>
+
+                                {!isCustomGoal ? (
                                     <>
-                                        <Upload size={32} className="mb-2"/>
-                                        <span className="text-sm">Нажми, чтобы загрузить фото</span>
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                            {SUGGESTED_GOALS.map((g, idx) => (
+                                                <div 
+                                                    key={idx} 
+                                                    onClick={() => {
+                                                        setGoalName(g.name);
+                                                        setGoalTarget(g.price.toString());
+                                                        setGoalImage(g.img);
+                                                    }}
+                                                    className={`relative group rounded-xl overflow-hidden cursor-pointer bg-white shadow-sm transition-all ${
+                                                        goalName === g.name ? 'border-2 border-primary-500 ring-2 ring-primary-200' : 'border border-gray-100 hover:border-gray-300'
+                                                    }`}
+                                                >
+                                                    <div className="w-full h-24 bg-white p-2 flex items-center justify-center">
+                                                        <img src={g.img} className="w-full h-full object-contain" alt={g.name} />
+                                                    </div>
+                                                    <div className="p-3 border-t border-gray-100 bg-gray-50">
+                                                        <span className="text-gray-900 font-bold text-xs leading-tight block truncate">{g.name}</span>
+                                                        <span className="text-gray-500 text-[10px] font-medium">{g.price.toLocaleString()}₽</span>
+                                                    </div>
+                                                    {goalName === g.name && <div className="absolute top-2 right-2 bg-primary-500 text-white p-1 rounded-full shadow-md"><Check size={12}/></div>}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <button 
+                                            onClick={() => {
+                                                setIsCustomGoal(true);
+                                                setGoalName('');
+                                                setGoalTarget('');
+                                                setGoalImage('');
+                                            }}
+                                            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center space-x-2 hover:bg-gray-50"
+                                        >
+                                            <Upload size={18} />
+                                            <span>Загрузить свою цель</span>
+                                        </button>
                                     </>
-                                )}
-                                {goalImage && (
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-white font-medium">Изменить фото</span>
+                                ) : (
+                                    <div className="animate-in fade-in">
+                                        <button onClick={() => setIsCustomGoal(false)} className="text-primary-600 font-medium mb-4 flex items-center text-sm"><ArrowLeft size={16} className="mr-1"/> Выбрать из списка</button>
+                                        
+                                        <label className="bg-white h-48 rounded-xl flex flex-col items-center justify-center mb-2 text-gray-400 border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden group">
+                                            <input type="file" accept="image/*" onChange={handleGoalImageUpload} className="hidden" />
+                                            {goalImage ? (
+                                                <img src={goalImage} className="w-full h-full object-contain p-2" alt="Preview" />
+                                            ) : (
+                                                <>
+                                                    <Upload size={32} className="mb-2"/>
+                                                    <span className="text-sm">Нажми, чтобы загрузить фото</span>
+                                                </>
+                                            )}
+                                            {goalImage && (
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span className="text-white font-medium">Изменить фото</span>
+                                                </div>
+                                            )}
+                                        </label>
+                                        <p className="text-center text-xs text-gray-400 mb-4">добавь изображение своей цели</p>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500">Название</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={goalName} 
+                                                    onChange={(e) => setGoalName(e.target.value)}
+                                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                                    placeholder="Например: Отпуск"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500">Стоимость (₽)</label>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    onKeyDown={preventInvalidInput}
+                                                    value={goalTarget}
+                                                    onChange={(e) => setGoalTarget(e.target.value)}
+                                                    className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
+                                                    placeholder="100000"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
-                            </label>
-
-                            <div>
-                                <label className="text-xs text-gray-400">Название</label>
-                                <input 
-                                    type="text" 
-                                    value={goalName} 
-                                    onChange={e => setGoalName(e.target.value)} 
-                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
+                                
+                                <button 
+                                    onClick={handleSaveNewGoal}
+                                    disabled={!goalName || !goalTarget}
+                                    className="w-full py-3 mt-4 bg-primary-600 disabled:opacity-50 text-white rounded-xl font-bold shadow-lg shadow-primary-500/20 active:scale-95 transition-all"
+                                >
+                                    Сохранить цель
+                                </button>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-400">Цена цели (₽)</label>
-                                <input 
-                                    type="number" 
-                                    min="0"
-                                    onKeyDown={preventInvalidInput}
-                                    value={goalTarget} 
-                                    onChange={e => setGoalTarget(e.target.value)} 
-                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
-                            </div>
-                            <div className="flex space-x-2 pt-2">
-                                <button onClick={saveGoal} className="flex-1 bg-primary-500 text-white py-3 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20">Сохранить</button>
-                                <button onClick={() => setEditingGoal(false)} className="px-6 bg-gray-100 text-gray-500 rounded-xl text-sm font-bold">Отмена</button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </>
+                )}
             </section>
 
             {/* Preferences */}
@@ -537,35 +629,9 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         </div>
                          <ChevronRight size={16} className="text-gray-400"/>
                     </button>
-                    <button 
-                        onClick={() => setShowResetConfirm(true)}
-                        className="w-full p-4 flex items-center space-x-3 text-error hover:bg-red-50 text-left"
-                    >
-                        <Trash2 size={20} />
-                        <span>Сбросить все данные</span>
-                    </button>
                 </div>
             </section>
             
-            {/* Reset Confirmation Modal */}
-            {showResetConfirm && (
-                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
-                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-center mb-4 text-error">
-                            <AlertCircle size={48} />
-                        </div>
-                        <h3 className="text-center text-xl font-bold text-gray-900 mb-2">Сбросить все данные?</h3>
-                        <p className="text-center text-gray-500 mb-6">
-                            Это действие удалит всю историю, настройки и текущую цель. Это действие <span className="font-bold">необратимо</span>.
-                        </p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setShowResetConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
-                            <button onClick={onReset} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Сбросить</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Delete Habit Confirmation Modal */}
             {showDeleteHabitConfirm && (
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
@@ -580,6 +646,25 @@ const Settings: React.FC<SettingsProps> = ({ state, onReset, onUpdateHabit, onUp
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setShowDeleteHabitConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
                             <button onClick={confirmDeleteHabit} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Goal Confirmation Modal */}
+            {showDeleteGoalConfirm && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-center mb-4 text-error">
+                            <AlertCircle size={48} />
+                        </div>
+                        <h3 className="text-center text-xl font-bold text-gray-900 mb-2">Удалить цель?</h3>
+                        <p className="text-center text-gray-500 mb-6">
+                            Ты уверен, что хочешь удалить текущую цель? Весь прогресс накоплений по ней будет сброшен.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setShowDeleteGoalConfirm(false)} className="py-3 rounded-xl font-bold text-gray-600 bg-gray-100">Отмена</button>
+                            <button onClick={confirmDeleteGoal} className="py-3 rounded-xl font-bold text-white bg-error shadow-lg shadow-red-500/30">Удалить</button>
                         </div>
                     </div>
                 </div>
